@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="C++日志框架有非常多，如何进行选择，其中性能是一个非常重要的考量因素，本文对几种有代表性的日志框架进行基准测试，并深入到源码和实现原理进行分析对比，便于大家进行选择。">
+<meta name="keywords" content="c++,logging">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++日志框架基准测试及源码分析">
+<meta property="og:url" content="http://zhongpan.tech/2019/07/04/010-cpp-logging-framework-benchmark/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="C++日志框架有非常多，如何进行选择，其中性能是一个非常重要的考量因素，本文对几种有代表性的日志框架进行基准测试，并深入到源码和实现原理进行分析对比，便于大家进行选择。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.459Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="C++日志框架基准测试及源码分析">
+<meta name="twitter:description" content="C++日志框架有非常多，如何进行选择，其中性能是一个非常重要的考量因素，本文对几种有代表性的日志框架进行基准测试，并深入到源码和实现原理进行分析对比，便于大家进行选择。">
+  <link rel="canonical" href="http://zhongpan.tech/2019/07/04/010-cpp-logging-framework-benchmark/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>C++日志框架基准测试及源码分析 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2019/07/04/010-cpp-logging-framework-benchmark/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">C++日志框架基准测试及源码分析
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-07-04 13:26:32" itemprop="dateCreated datePublished" datetime="2019-07-04T13:26:32+08:00">2019-07-04</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/loging/" itemprop="url" rel="index"><span itemprop="name">loging</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>C++日志框架有非常多，如何进行选择，其中性能是一个非常重要的考量因素，本文对几种有代表性的日志框架进行基准测试，并深入到源码和实现原理进行分析对比，便于大家进行选择。</p>
+<a id="more"></a>
+<h3 id="测试对象">测试对象</h3>
+<ul>
+<li><a href="https://github.com/log4cplus/log4cplus" target="_blank" rel="noopener">log4cplus</a> 2.0.2</li>
+<li><a href="https://github.com/gabime/spdlog" target="_blank" rel="noopener">spdlog</a> 1.3.1</li>
+<li><a href="https://boost.org" target="_blank" rel="noopener">boost</a>.log 1.70</li>
+</ul>
+<p>log4cplus属于仿log4j一类，也是起步较早的日志框架，早在2010年，出于log4j的名气，我在项目中就采用了log4cplus；spdlog属于比较现代化的日志框架，专注于性能；boost.log是1.54进入boost库的，当年选择log4cplus时还在评审阶段，boost可以说是准C++标准库，能够进入boost库自然质量不低，但是其设计相对也比较复杂，boost.log使用起来着实不太方便，它不太像直接面向用户使用，而更像是作为底层库供用户封装为更上层库。</p>
+<h4 id="日志框架对比">日志框架对比</h4>
+<p>三种日志库在一些特性和实现方式上存在比较大的差别，为更好理解他们，先做一个简单对比：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>log4cplus</th>
+<th>spdlog</th>
+<th>boost.log</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>线程安全    </td>
+<td>默认线程安全</td>
+<td>分mt和st</td>
+<td>分mt和st</td>
+</tr>
+<tr>
+<td>异步支持</td>
+<td>从1.1.0开始增加asyncappender，可配置队列深度，线程数不可配，总为1，深度满后阻塞调用。每个日志对象所有。log4cplus并没有提供显式flush的接口，只有shutdown日志对象或close appender间接flush。（log4cplus的同步appender构造函数都有一个immediateFlush参数，表示C++标准输出流或文件流的flush）</td>
+<td>可设置队列深度和线程数，深度满后有阻塞和丢弃老的两种策略；使用全局或每个日志独有都可以。        </td>
+<td>队列有限制深度/不限制深度以及fifo/ordering组合起来四种，限制深度的队列满后有阻塞和丢弃新的两种策略；线程数总为1个；sink frontend所有。</td>
+</tr>
+<tr>
+<td>日志对象和sink的关系</td>
+<td>sink在log4cplus中称为appender，每个日志对象显式指定appender。</td>
+<td>每个日志对象显式指定sink。</td>
+<td>无法显式指定日志对象(boost.log称为log source)对应到哪个sink，换言之每个日志对象对应所有sink，要实现某个日志对象只输出到某个sink，需要通过在sink上设置filter来实现。具体可参考：<a href="https://stackoverflow.com/questions/34362871/use-channel-hiearchy-of-boost-log-for-severity-and-sink-filtering/34372526" target="_blank" rel="noopener">use-channel-hiearchy-of-boost-log-for-severity-and-sink-filtering</a>，<a href="http://boost.2283326.n4.nabble.com/log-connecting-a-logger-to-a-specific-sink-td4655815.html" target="_blank" rel="noopener">connecting a logger to a specific sink</a></td>
+</tr>
+<tr>
+<td>日志继承</td>
+<td>支持，类似log4j，日志继承有一个不好的地方，日志会自动写到父日志，而root日志是所有日志的祖先，如果配置了root日志，总会写到其中，这样会导致写入效率劣化严重</td>
+<td>不支持</td>
+<td><a href="https://www.boost.org/doc/libs/1_70_0/libs/log/doc/html/log/rationale/why_not_log4j.html" target="_blank" rel="noopener">不支持</a></td>
+</tr>
+<tr>
+<td>配置文件</td>
+<td>支持，类似log4j</td>
+<td>不支持</td>
+<td><a href="https://www.boost.org/doc/libs/1_70_0/libs/log/doc/html/log/detailed/utilities.html#log.detailed.utilities.setup.settings_file" target="_blank" rel="noopener">支持</a></td>
+</tr>
+<tr>
+<td>自定义日志级别</td>
+<td><a href="https://github.com/log4cplus/log4cplus/tree/master/tests/customloglevel_test" target="_blank" rel="noopener">支持</a></td>
+<td><a href="https://github.com/gabime/spdlog/issues/400" target="_blank" rel="noopener">不支持</a></td>
+<td>支持</td>
+</tr>
+</tbody>
+</table>
+<h4 id="boost-log">boost.log</h4>
+<p>boost.log相对复杂，单独做一个简单介绍。boost.log使用了很多新的概念，设计上非常模块化，可以灵活组装和扩展。对于初次使用boost.log，上手不会特别顺畅，需要理解清楚以下几个核心概念：</p>
+<ul>
+<li>Log source：就是其他框架中的日志对象，使用者直接面对的，其特别之处是日志级别也是完全自定义的；</li>
+<li>Log sink frontend：异步和同步在这一层实现，sink backend作为参数传给它，创建之后add到core中；</li>
+<li>Log sink backend：代表日志输出的载体，如控制台、文件等，这是我们比较熟悉的概念，把sink分为frontend和backend，我想是为了各层都可以独立扩展，非常灵活；</li>
+<li>Logging core：它是单例的，建立source和sink之间的连接，就像一个hub一样，还可以设置一些全局fiter和属性。</li>
+</ul>
+<p>以下列出目前boost.log支持的所有source和sink：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> logging = boost::<span class="built_in">log</span>;</span><br><span class="line"><span class="keyword">namespace</span> sinks = boost::<span class="built_in">log</span>::sinks;</span><br><span class="line"><span class="keyword">namespace</span> src = boost::<span class="built_in">log</span>::sources;</span><br><span class="line"><span class="keyword">namespace</span> expr = boost::<span class="built_in">log</span>::expressions;</span><br><span class="line"><span class="keyword">namespace</span> attrs = boost::<span class="built_in">log</span>::attributes;</span><br><span class="line"><span class="keyword">namespace</span> keywords = boost::<span class="built_in">log</span>::keywords;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Log source，mt表示线程安全版本，不带mt表示非线程安全版本</span></span><br><span class="line">src::logger</span><br><span class="line">src::logger_mt</span><br><span class="line">src::severity_logger</span><br><span class="line">src::severity_logger_mt</span><br><span class="line">src::channel_logger</span><br><span class="line">src::channel_logger_mt</span><br><span class="line">src::severity_channel_logger</span><br><span class="line">src::severity_channel_logger_mt</span><br><span class="line"></span><br><span class="line"><span class="comment">// Log sink frontend</span></span><br><span class="line">sinks::unlocked_sink</span><br><span class="line">sinks::synchronous_sink</span><br><span class="line">sinks::asynchronous_sink</span><br><span class="line"></span><br><span class="line"><span class="comment">// 对于异步sink frontend有如下队列</span></span><br><span class="line"><span class="comment">//record queueing strategy</span></span><br><span class="line">sinks::unbounded_fifo_queue</span><br><span class="line">sinks::unbounded_ordering_queue</span><br><span class="line">sinks::bounded_fifo_queue</span><br><span class="line">sinks::bounded_ordering_queue</span><br><span class="line"><span class="comment">//overflow strategies:</span></span><br><span class="line">sinks::drop_on_overflow</span><br><span class="line">sinks::block_on_overflow</span><br><span class="line"></span><br><span class="line"><span class="comment">// Log sink backend</span></span><br><span class="line">sinks::basic_text_ostream_backend</span><br><span class="line">sinks::text_file_backend</span><br><span class="line">sinks::text_multifile_backend</span><br><span class="line">sinks::text_ipc_message_queue_backend</span><br><span class="line">sinks::syslog_backend</span><br><span class="line">sinks::basic_debug_output_backend</span><br><span class="line">sinks::basic_simple_event_log_backend</span><br><span class="line">sinks::basic_event_log_backend</span><br></pre></td></tr></table></figure>
+<h3 id="测试工具-代码">测试工具&amp;代码</h3>
+<ul>
+<li>
+<p><a href="https://github.com/google/benchmark" target="_blank" rel="noopener">benchmark</a> 1.5.0</p>
+<p>对benchmark的使用遇到一点小障碍，因为我希望将flush的时间也统计在内，但是benchmark的默认计时方式是无法在最后一个迭代，加入对flush的调用，因为最后一个迭代会自动停止计时。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="keyword">auto</span> _ : state) &#123;</span><br><span class="line">	function_to_be_measured();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 等价于</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">auto</span> it = state.begin(), e = state.end(); it != e; ++it) &#123;</span><br><span class="line">    function_to_be_measured();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 我希望这样，但是没有成功，因为!=操作符中，如果到达迭代最后，会自动停止计时</span></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">auto</span> it = state.begin(), e = state.end();;) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!(it != e)) &#123;</span><br><span class="line">        <span class="built_in">log</span>.flush();</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">log</span>.info(...);</span><br><span class="line">    ++it;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因此，最终只有选择UseManualTime计时方式。</p>
+</li>
+<li>
+<p>测试代码：&lt;<a href="https://github.com/zhongpan/cpp-logging-benchmark" target="_blank" rel="noopener">https://github.com/zhongpan/cpp-logging-benchmark</a></p>
+<ol>
+<li>时间和速率统计包含flush时间，也就是保证日志全部输出到控制台或文件；</li>
+<li>异步写入都是采用1个线程，队列深度都设置为8192，队列满后都采用阻塞策略；</li>
+<li>写入消息长度最小选择32，避免string的小字符串性能优化，能够代表更通常的场景；</li>
+</ol>
+</li>
+</ul>
+<h3 id="测试结果">测试结果</h3>
+<ul>
+<li>
+<p>测试环境：</p>
+<p>Intel® Core™ i5-7200U CPU @ 2.50GHz<br>
+Micron 1100 SATA 256G</p>
+</li>
+<li>
+<p>测试结果：</p>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>a_c_32</th>
+<th>a_c_512</th>
+<th>s_c_32</th>
+<th>s_c_512</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>log4cplus</td>
+<td>298.557/s</td>
+<td>47.8782/s</td>
+<td>313.306/s</td>
+<td>50.7682/s</td>
+</tr>
+<tr>
+<td>spdlog</td>
+<td>14.4967k/s</td>
+<td>8.49778k/s</td>
+<td>15.5747k/s</td>
+<td>6.09162k/s</td>
+</tr>
+<tr>
+<td>boost.log</td>
+<td>6.55519k/s</td>
+<td>3.86561k/s</td>
+<td>4.98684k/s</td>
+<td>3.22393k/s</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>a_f_32</strong></td>
+<td><strong>a_f_512</strong></td>
+<td><strong>s_f_32</strong></td>
+<td><strong>s_f_512</strong></td>
+</tr>
+<tr>
+<td>log4cplus</td>
+<td>15.8821k/s</td>
+<td>5.48616k/s</td>
+<td>11.2635k/s</td>
+<td>4.91378k/s</td>
+</tr>
+<tr>
+<td>spdlog</td>
+<td>180.147k/s</td>
+<td>109.091k/s</td>
+<td>229.206k/s</td>
+<td>135.489k/s</td>
+</tr>
+<tr>
+<td>boost.log</td>
+<td>29.3718k/s</td>
+<td>25.9405k/s</td>
+<td>15.7826k/s</td>
+<td>14.6118k/s</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>说明：</li>
+</ul>
+<ol>
+<li>
+<p>32/512表示消息字节数；</p>
+</li>
+<li>
+<p>a/s表示异步或同步；</p>
+</li>
+<li>
+<p>c/f表示控制台或文件；</p>
+</li>
+</ol>
+<h3 id="结果分析">结果分析</h3>
+<ol>
+<li>所有的日志框架都表现出文件的写入效率远高于控制台，因此尽量使用文件方式写日志；</li>
+<li>同步和异步两种方式，如果把flush的时间统计在内，则效率区别不大，但是异步方式不会阻塞应用，如果考虑对应用的效率影响，异步方式显著优于同步，但是可能存在丟日志的情况，在应用退出时必须主动flush；</li>
+<li>当消息长度增加时，写入效率都有所下降，spdlog当消息大于500字节时下降显著（见下面的源码分析），boost.log下降不明显；</li>
+<li>各种情况写入效率都是：spdlog&gt;boost.log&gt;log4cplus，并且log4cplus的控制台写入效率非常非常低，spdlog的效率显著高于其他日志框架，特别是文件方式写入效率，让人难以置信👍，boost.log在复杂的设计下仍然保持良好的性能，也非常厉害。</li>
+</ol>
+<h4 id="spdlog性能优化源码分析">spdlog性能优化源码分析</h4>
+<ol>
+<li>std::string_view的使用避免字符串复制时内存分配</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// spdlog/details/logger_impl.h</span></span><br><span class="line"><span class="keyword">inline</span> <span class="keyword">void</span> spdlog::logger::<span class="built_in">log</span>(source_loc source, level::level_enum lvl, <span class="keyword">const</span> <span class="keyword">char</span> *msg)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> (!should_log(lvl))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        details::<span class="function">log_msg <span class="title">log_msg</span><span class="params">(source, &amp;name_, lvl, spdlog::<span class="keyword">string_view_t</span>(msg))</span></span>;</span><br><span class="line">        sink_it_(log_msg);</span><br><span class="line">    &#125;</span><br><span class="line">    SPDLOG_CATCH_AND_HANDLE</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// spdlog/common.h</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// string_view type - either std::string_view or fmt::string_view (pre c++17)</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> defined(FMT_USE_STD_STRING_VIEW)</span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">string_view_t</span> = <span class="built_in">std</span>::string_view;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">string_view_t</span> = fmt::string_view;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>实现fmt::memory_buffer进行字符串格式化，500长度以内使用内部数组，避免堆内存分配，并且比sstream更快</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// spdlog/sinks/basic_file_sink.h    </span></span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">sink_it_</span><span class="params">(<span class="keyword">const</span> details::log_msg &amp;msg)</span> override</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        fmt::memory_buffer formatted;</span><br><span class="line">        sink::formatter_-&gt;format(msg, formatted);</span><br><span class="line">        file_helper_.write(formatted);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// spdlog/fmt/bundled/format.h</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// The number of characters to store in the basic_memory_buffer object itself</span></span><br><span class="line"><span class="comment">// to avoid dynamic memory allocation.</span></span><br><span class="line"><span class="keyword">enum</span> &#123; inline_buffer_size = <span class="number">500</span> &#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="built_in">std</span>::<span class="keyword">size_t</span> SIZE = inline_buffer_size,</span><br><span class="line">          <span class="keyword">typename</span> Allocator = <span class="built_in">std</span>::allocator&lt;T&gt; &gt;</span><br><span class="line">class basic_memory_buffer: <span class="keyword">private</span> Allocator, <span class="keyword">public</span> internal::basic_buffer&lt;T&gt; &#123;</span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  T store_[SIZE];</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>缓存时间字符串，避免重复格式化</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// spdlog/details/pattern_formatter.h   </span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">format</span><span class="params">(<span class="keyword">const</span> details::log_msg &amp;msg, <span class="keyword">const</span> <span class="built_in">std</span>::tm &amp;tm_time, fmt::memory_buffer &amp;dest)</span> override</span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">using</span> <span class="built_in">std</span>::chrono::duration_cast;</span><br><span class="line">        <span class="keyword">using</span> <span class="built_in">std</span>::chrono::milliseconds;</span><br><span class="line">        <span class="keyword">using</span> <span class="built_in">std</span>::chrono::seconds;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> SPDLOG_NO_DATETIME</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// cache the date/time part for the next second.</span></span><br><span class="line">        <span class="keyword">auto</span> duration = msg.time.time_since_epoch();</span><br><span class="line">        <span class="keyword">auto</span> secs = duration_cast&lt;seconds&gt;(duration);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (cache_timestamp_ != secs || cached_datetime_.size() == <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            cached_datetime_.clear();</span><br><span class="line">            cached_datetime_.push_back(<span class="string">'['</span>);</span><br><span class="line">            fmt_helper::append_int(tm_time.tm_year + <span class="number">1900</span>, cached_datetime_);</span><br><span class="line">            cached_datetime_.push_back(<span class="string">'-'</span>);</span><br><span class="line"></span><br><span class="line">            fmt_helper::pad2(tm_time.tm_mon + <span class="number">1</span>, cached_datetime_);</span><br><span class="line">            cached_datetime_.push_back(<span class="string">'-'</span>);</span><br><span class="line"></span><br><span class="line">            fmt_helper::pad2(tm_time.tm_mday, cached_datetime_);</span><br><span class="line">            cached_datetime_.push_back(<span class="string">' '</span>);</span><br><span class="line"></span><br><span class="line">            fmt_helper::pad2(tm_time.tm_hour, cached_datetime_);</span><br><span class="line">            cached_datetime_.push_back(<span class="string">':'</span>);</span><br><span class="line"></span><br><span class="line">            fmt_helper::pad2(tm_time.tm_min, cached_datetime_);</span><br><span class="line">            cached_datetime_.push_back(<span class="string">':'</span>);</span><br><span class="line"></span><br><span class="line">            fmt_helper::pad2(tm_time.tm_sec, cached_datetime_);</span><br><span class="line">            cached_datetime_.push_back(<span class="string">'.'</span>);</span><br><span class="line"></span><br><span class="line">            cache_timestamp_ = secs;</span><br><span class="line">        &#125;</span><br><span class="line">        fmt_helper::append_buf(cached_datetime_, dest);</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>控制台输出使用CRT接口，相对于ostream更快</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// spdlog/details/console_globals.h</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">console_stdout</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">   <span class="keyword">static</span> <span class="built_in">std</span>::<span class="function">FILE *<span class="title">stream</span><span class="params">()</span></span></span><br><span class="line"><span class="function">   </span>&#123;</span><br><span class="line">       <span class="keyword">return</span> <span class="built_in">stdout</span>;</span><br><span class="line">   &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> _WIN32</span></span><br><span class="line">   <span class="function"><span class="keyword">static</span> HANDLE <span class="title">handle</span><span class="params">()</span></span></span><br><span class="line"><span class="function">   </span>&#123;</span><br><span class="line">       <span class="keyword">return</span> ::GetStdHandle(STD_OUTPUT_HANDLE);</span><br><span class="line">   &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// corecrt_wstdio.h in windows sdk 10.0.17763.0</span></span><br><span class="line">_ACRTIMP_ALT FILE* __cdecl __acrt_iob_func(<span class="keyword">unsigned</span> _Ix);</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> stdin  (__acrt_iob_func(0))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> stdout (__acrt_iob_func(1))</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> stderr (__acrt_iob_func(2))</span></span><br></pre></td></tr></table></figure>
+<ol start="5">
+<li>文件写入使用的CRT接口，相对于ofstream快</li>
+</ol>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sdplog/details/file_helper.h    </span></span><br><span class="line">   <span class="function"><span class="keyword">void</span> <span class="title">write</span><span class="params">(<span class="keyword">const</span> fmt::memory_buffer &amp;buf)</span></span></span><br><span class="line"><span class="function">   </span>&#123;</span><br><span class="line">       <span class="keyword">size_t</span> msg_size = buf.size();</span><br><span class="line">       <span class="keyword">auto</span> data = buf.data();</span><br><span class="line">       <span class="keyword">if</span> (<span class="built_in">std</span>::fwrite(data, <span class="number">1</span>, msg_size, fd_) != msg_size)</span><br><span class="line">       &#123;</span><br><span class="line">           <span class="keyword">throw</span> spdlog_ex(<span class="string">"Failed writing to file "</span> + os::filename_to_str(_filename), errno);</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+<h4 id="总结">总结</h4>
+<p>三种日志框架各有所长，我觉得日志框架最重要的还是性能和接口易用性，为了调试bug，必须打必要的日志，但是开了日志，又影响到程序性能，甚至本来必现的问题，因为效率变差的原因都不出来了，这就尴尬了。经过以上分析对比，spdlog在性能和接口易用性上完胜其他日志框架，是日志框架的首选，其次boost.log也是一个不错选择，但是其接口用起来不是特别顺畅，对于log4cplus还是不推荐大家使用了，已经用了的尽快切换吧，当然spdlog使用了大量C++新特性，你必须使用C++11以上的新标准，但这似乎不是什么问题。</p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2019/07/04/010-cpp-logging-framework-benchmark/" title="C++日志框架基准测试及源码分析">http://zhongpan.tech/2019/07/04/010-cpp-logging-framework-benchmark/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/c/" rel="tag"><i class="fa fa-tag"></i> c++</a>
+            
+              <a href="/tags/logging/" rel="tag"><i class="fa fa-tag"></i> logging</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/07/01/009-windows-remote-control-tool/" rel="next" title="选择最佳的Windows远程桌面替代工具">
+                  <i class="fa fa-chevron-left"></i> 选择最佳的Windows远程桌面替代工具
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/08/06/011-nodeport-cannot-be-accessed-outside-the-k8s-cluster/" rel="prev" title="解决k8s集群外无法访问NodePort问题">
+                  解决k8s集群外无法访问NodePort问题 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#测试对象"><span class="nav-number">1.</span> <span class="nav-text">测试对象</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#日志框架对比"><span class="nav-number">1.1.</span> <span class="nav-text">日志框架对比</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#boost-log"><span class="nav-number">1.2.</span> <span class="nav-text">boost.log</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#测试工具-代码"><span class="nav-number">2.</span> <span class="nav-text">测试工具&amp;代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#测试结果"><span class="nav-number">3.</span> <span class="nav-text">测试结果</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#结果分析"><span class="nav-number">4.</span> <span class="nav-text">结果分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#spdlog性能优化源码分析"><span class="nav-number">4.1.</span> <span class="nav-text">spdlog性能优化源码分析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总结"><span class="nav-number">4.2.</span> <span class="nav-text">总结</span></a></li></ol></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

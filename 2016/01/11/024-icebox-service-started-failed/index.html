@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="通过IceGridGUI启动某个icebox服务时，弹出如下图的错误对话框，启动服务失败。提示找不到icebox.exe程序，但是icebox.exe是存在的，并且在path中，问题非常诡异。下面详细记录问题定位的过程。">
+<meta name="keywords" content="ice,icegrid,windbg">
+<meta property="og:type" content="article">
+<meta property="og:title" content="icebox服务启动失败问题定位记录">
+<meta property="og:url" content="http://zhongpan.tech/2016/01/11/024-icebox-service-started-failed/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="通过IceGridGUI启动某个icebox服务时，弹出如下图的错误对话框，启动服务失败。提示找不到icebox.exe程序，但是icebox.exe是存在的，并且在path中，问题非常诡异。下面详细记录问题定位的过程。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/d06d4e8f-984d-45df-b3f0-c2176964eb52.jpg">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/026afae1-b0a1-417c-8509-761b8419ecec.jpg">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/98016a20-419a-41b1-a50a-f96a1b3726a1.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/741ee0f5-9670-4130-942e-f4b2183273e8.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/a0a5ab69-f573-4530-b213-2a65b9a5a503.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/0b85463c-88d7-4ed7-8451-2704a0fd57ca.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/2231e683-a674-4405-8454-b00043b453c6.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/35bd7055-276d-49f5-8351-f26caa36f1a0.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/a99fc5be-9953-4030-b1c1-a3323af06f49.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/a230ebb1-cbcf-49a6-a45f-04333592270f.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/b3370bc7-aa91-407b-b110-03fcd7cc8085.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.467Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="icebox服务启动失败问题定位记录">
+<meta name="twitter:description" content="通过IceGridGUI启动某个icebox服务时，弹出如下图的错误对话框，启动服务失败。提示找不到icebox.exe程序，但是icebox.exe是存在的，并且在path中，问题非常诡异。下面详细记录问题定位的过程。">
+<meta name="twitter:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/d06d4e8f-984d-45df-b3f0-c2176964eb52.jpg">
+  <link rel="canonical" href="http://zhongpan.tech/2016/01/11/024-icebox-service-started-failed/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>icebox服务启动失败问题定位记录 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2016/01/11/024-icebox-service-started-failed/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">icebox服务启动失败问题定位记录
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2016-01-11 15:03:49" itemprop="dateCreated datePublished" datetime="2016-01-11T15:03:49+08:00">2016-01-11</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/分布式计算/" itemprop="url" rel="index"><span itemprop="name">分布式计算</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>通过IceGridGUI启动某个icebox服务时，弹出如下图的错误对话框，启动服务失败。提示找不到icebox.exe程序，但是icebox.exe是存在的，并且在path中，问题非常诡异。下面详细记录问题定位的过程。</p>
+<a id="more"></a>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/d06d4e8f-984d-45df-b3f0-c2176964eb52.jpg" alt></p>
+<h2 id="背景知识">背景知识</h2>
+<ul>
+<li>IceGrid的架构中包含icegridregistry.exe和icegridnode.exe两个进程，icegridnode.exe负责启动具体的服务，当从IceGridGUI中start某个服务时， 实际上是调用icegridnode.exe接口，由icegridnode.exe负责启动服务，如果服务是icebox服务，就会根据application.xml中配置的icebox路径运行 icebox，由icebox加载具体服务dll。</li>
+<li>application.xml中配置的icebox路径，一般配置的icebox程序名，不包含完整路径，icebox程序名根据不同的操作系统和运行环境，程序名有所不同。</li>
+</ul>
+<h2 id="初步判断">初步判断</h2>
+<p>问题的现象是找不到icebox，因为application.xml中只配置icebox程序名，没有完整路径， 所以推测icegridnode.exe应该是通过系统path寻找icebox的，那么首先自然会想到可能是系统path路径中不包含icebox的路径。</p>
+<h2 id="第一次尝试">第一次尝试</h2>
+<ul>
+<li>首先查看系统环境变量是否包含icebox的路径， 经过查看此路径是存在的；</li>
+<li>然后查看进程的控制块是否包含系统Path，进程启动时会复制一份系统环境变量到进程控制块，也就是说每个进程都有自己的一份系统环境变量， 因此修改系统Path对已经启动的进程是无效的。那么怎么查看进程的环境变量呢，可以通过procexp.exe工具，经过查看icegridnode.exe进程中系统Path是正确的。至此第一次尝试以失败告终。</li>
+</ul>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/026afae1-b0a1-417c-8509-761b8419ecec.jpg" alt></p>
+<h2 id="继续分析">继续分析</h2>
+<ul>
+<li>经过初步诊断排除了外部环境的问题，接下来只能从程序内部来找原因，需要找到出问题的代码位置，根据服务启动的原理，问题应该出在icegridnode.exe中， 关键就是怎么在Ice源代码中快速找到，而目前唯一的线索就是弹出的错误对话框，这应该是突破口；</li>
+<li>根据对话框中的错误消息，用关键字&quot;Couldn’t find&quot;在Ice源代码中搜索，这里推荐<a href="http://soft.hao123.com/soft/appid/51895.html" target="_blank" rel="noopener">FindStr</a>（Windows下也有findstr命令）这个工具，经过搜索果然找到了 出问题的代码位置，如下：</li>
+</ul>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/98016a20-419a-41b1-a50a-f96a1b3726a1.png" alt></p>
+<ul>
+<li>源代码的位置找到了，就要开始上终极神器了，那就是windbg，接下来先做一些准备工作，看一下出问题的代码。</li>
+</ul>
+<h2 id="icegridnode-exe启动icebox的源代码">icegridnode.exe启动icebox的源代码</h2>
+<p>查看代码关键的地方是SearchPathW的调用，这是一个Windows API。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> _WIN32</span></span><br><span class="line">    <span class="keyword">if</span>(!IceUtilInternal::isAbsolutePath(path))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span>(path.find(<span class="string">'/'</span>) == <span class="built_in">string</span>::npos)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">//</span></span><br><span class="line">            <span class="comment">// Get the absolute pathname of the executable.</span></span><br><span class="line">            <span class="comment">//</span></span><br><span class="line">            <span class="keyword">wchar_t</span> absbuf[_MAX_PATH];</span><br><span class="line">            <span class="keyword">wchar_t</span>* fPart;</span><br><span class="line">            wstring ext = path.size() &lt;= <span class="number">4</span> || path[path.size() - <span class="number">4</span>] != <span class="string">'.'</span> ? <span class="string">L".exe"</span> : <span class="string">L""</span>;</span><br><span class="line">            <span class="keyword">if</span>(SearchPathW(<span class="literal">NULL</span>, IceUtil::stringToWstring(path).c_str(), ext.c_str(), _MAX_PATH, absbuf, &amp;fPart) == <span class="number">0</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">if</span>(_traceLevels-&gt;activator &gt; <span class="number">0</span>)</span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="function">Trace <span class="title">out</span><span class="params">(_traceLevels-&gt;logger, _traceLevels-&gt;activatorCat)</span></span>;</span><br><span class="line">                    out &lt;&lt; <span class="string">"couldn't find `"</span> &lt;&lt; path &lt;&lt; <span class="string">"' executable."</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">throw</span> <span class="built_in">string</span>(<span class="string">"Couldn't find `"</span> + path + <span class="string">"' executable."</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            path = IceUtil::wstringToString(absbuf);</span><br></pre></td></tr></table></figure>
+<h2 id="searchpath函数说明">SearchPath函数说明</h2>
+<p><a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa365527(v=vs.85).aspx" target="_blank" rel="noopener">SearchPath</a>定义：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">DWORD WINAPI <span class="title">SearchPath</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  _In_opt_  LPCTSTR lpPath,</span></span></span><br><span class="line"><span class="function"><span class="params">  _In_      LPCTSTR lpFileName,</span></span></span><br><span class="line"><span class="function"><span class="params">  _In_opt_  LPCTSTR lpExtension,</span></span></span><br><span class="line"><span class="function"><span class="params">  _In_      DWORD   nBufferLength,</span></span></span><br><span class="line"><span class="function"><span class="params">  _Out_     LPTSTR  lpBuffer,</span></span></span><br><span class="line"><span class="function"><span class="params">  _Out_opt_ LPTSTR  *lpFilePart</span></span></span><br><span class="line"><span class="function"><span class="params">)</span></span>;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>Parameters</li>
+</ul>
+<p>lpPath [in, optional] The path to be searched for the file. If this parameter is NULL, the function searches for a matching file using a registry-dependent system search path. For more information, see the Remarks section.</p>
+<ul>
+<li>Return value</li>
+</ul>
+<p>If the function succeeds, the value returned is the length, in TCHARs, of the string that is copied to the buffer, not including the terminating null character. If the return value is greater than nBufferLength, the value returned is the size of the buffer that is required to hold the path, including the terminating null character.</p>
+<p>If the function fails, the return value is zero. To get extended error information, call GetLastError.</p>
+<h2 id="开始第二次尝试-上windbg">开始第二次尝试，上windbg</h2>
+<ol>
+<li>先对icegridnode.exe做了一个userdump保留好环境以防万一， 然后设置好windbg的符号和源代码路径；</li>
+<li>用windbg attach到icegridnode.exe进程开始调试，打开Activator.cpp文件，在370行设置好断点，F5(Go)；</li>
+<li>在IceGridGUI工具中start某个服务，windbg中可以看到断点命中。很显然出现本问题一定是SearchPathW返回的0， 那么为什么SearchPathW返回的0，现在就可以一探究竟了，查看SearchPath输入的参数，发现输入的参数都是正确的， Step Into到IceUtil::stringToWstring，其转换结果也是正确的，Step Out继续往下调确认SearchPathW 确实返回的0；</li>
+<li>根据SearchPath函数的说明，返回0表示失败，通过GetLastError可以查询错误码，在windbg中通过!gle命令查询错误码为0，也就是没有错误， 这就奇怪了，输入参数都是正确的，错误码也显示没有错误，为什么找不到icebox呢？</li>
+<li>通过windbg的!peb命令可以查看进程控制块，确认了进程的环境变量系统Path确实包含正确路径，自此陷入僵局，一切看起来都是正常的， 但是SearchPath的返回结果就是不对。</li>
+</ol>
+<h2 id="windbg">windbg</h2>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/741ee0f5-9670-4130-942e-f4b2183273e8.png" alt></p>
+<ul>
+<li>小知识
+<ul>
+<li>!stl命令打印stl字符串</li>
+<li>!gle获取GetLastError错误码</li>
+<li>!peb命令查看进程控制块</li>
+</ul>
+</li>
+</ul>
+<h2 id="僵局打破">僵局打破</h2>
+<ul>
+<li>真是山穷水复疑无路，柳暗花明又一村，正当一筹莫展之时，一个误操作反而打破僵局，让新的线索浮出水面， 本来是想detach的，由于windbg卡住没反应，就接着点了关闭windbg，弹出对话框提示等待还是取消，就点了取消， 结果windbg是退出了，但是icegridnode.exe也退出了，幸好之前userdump了，不过毕竟丢失了第一手环境，还是 有些可惜，难道这个问题就此又成了无头冤案，不能啊。</li>
+<li>继续，这么奇怪的问题不找出真相让人不爽，既然icegridnode.exe已经退出，那重启一下，看能否重现问题吧， 进入services.msc，启动icegridnode服务，居然报错了，服务无法启动，顿时眼前一亮，马上想到肯定跟用户权限有关系， 查看了icegridnode服务的用户，使用的Local Service用户，那么会不会是Local Service用户权限问题导致的呢？</li>
+</ul>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/a0a5ab69-f573-4530-b213-2a65b9a5a503.png" alt></p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/0b85463c-88d7-4ed7-8451-2704a0fd57ca.png" alt></p>
+<h2 id="什么是local-service用户">什么是Local Service用户</h2>
+<p><a href="http://www.cnblogs.com/protorock/p/3189433.html" target="_blank" rel="noopener">参考1</a>，<a href="http://www.cnblogs.com/xianspace/archive/2009/04/05/1429835.html" target="_blank" rel="noopener">参考2</a></p>
+<ul>
+<li>LocalSystem 账户</li>
+</ul>
+<p>LocalSystem是预设的拥有本机所有权限的本地账户，这个账户跟通常的用户账户没有任何关联，也没有用户名和密码之类的凭证。这个服务账户可以打开注册表的HKEY_LOCAL_MACHINE\Security键，当LocalSystem访问网络资源时，它是作为计算机的域账户使用的。 举例来说，以LocalSystem账户运行的服务主要有：WindowsUpdate Client、 Clipbook、Com+、DHCP Client、Messenger Service、Task Scheduler、Server Service、Workstation Service，还有Windows Installer。</p>
+<ul>
+<li>Network Service 账户</li>
+</ul>
+<p>Network Service账户是预设的拥有本机部分权限的本地账户，它能够以计算机的名义访问网络资源。但是他没有Local System 那么多的权限，以这个账户运行的服务会根据实际环境把访问凭据提交给远程的计算机。Network Service账户通常可以访问Network Service、Everyone组，还有认证用户有权限访问的资源。 举例来说，以Network Service账户运行的服务主要有：Distributed Transaction Coordinator、DNS Client、Performance Logs and Alerts，还有RPC Locator。</p>
+<ul>
+<li>Local Service 账户</li>
+</ul>
+<p>Local Service账户是预设的拥有最小权限的本地账户，并在网络凭证中具有匿名的身份。Local Service账户通常可以访问Local Service、Everyone组还有认证用户有权限访问的资源。 举例来说，以Local Service账户运行的服务主要有：Alerter、Remote Registry、Smart Card、SSDP，还有WebClient。</p>
+<h2 id="第三次尝试-验证猜想">第三次尝试，验证猜想</h2>
+<ul>
+<li>感觉真相应该快出来了，接下来验证一下自己的猜想，很简单只要用Local Service用户运行cmd，在cmd中运行where命令就可以验证了；</li>
+<li>首先想到runas命令，尝试了一下，对内置用户无法使用；</li>
+<li>开始google如何使用Local Service用户运行某个程序，还真找到了方法，通过psexec工具， 这是一个非常强大的工具，点击<a href="https://technet.microsoft.com/en-us/sysinternals/bb897553" target="_blank" rel="noopener">此处</a>下载，其实里面还有一系列其他工具；</li>
+<li>执行psexec.exe -i -u “nt authority\localservice” cmd命令，弹出新的cmd窗口，执行whoami命令，确认确实使用localservice用户运行的， 注意这里localservice用户的全名是nt authority\localservice，然后运行where icebox命令，确实找不到，同时以administrator运行cmd， 确认可以找到，至此可以完全确定问题是由localservice用户权限导致。</li>
+</ul>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/2231e683-a674-4405-8454-b00043b453c6.png" alt></p>
+<h2 id="进一步找到根源">进一步找到根源</h2>
+<ul>
+<li>要修复问题还需要找到到底是什么影响了localservice用户的权限，可以通过对比正常的机器的设置找到差异， 首先想到的是组策略中是否有对localservice用户权限的设置，运行gpedit.msc打开组策略，对比正常机器和问题机器， 确实发现有一项两边是不一样的，但是修改之后并没有效果，下图为正常机器的截图；</li>
+</ul>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/35bd7055-276d-49f5-8351-f26caa36f1a0.png" alt></p>
+<ul>
+<li>然后想到的可能是目录的权限设置问题，对比正常机器和问题机器，发现问题机器少了Users用户组的权限，下图为正常机器截图：</li>
+</ul>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/a99fc5be-9953-4030-b1c1-a3323af06f49.png" alt></p>
+<ul>
+<li>然后在问题机器上参照正常机器添加Users用户组的“Read &amp; execute,List folder contents,Read,Special permissions (Create files/write data,Create folders/append data)”权限，激动人心的时刻出现了，where命令可以正确找到icebox了， icegridnode服务也可以正常启动了，验证了一下在IceGridGUI中start服务也是OK的，然后删除以上权限，再验证是否问题能复现，果然问题复现了， 问题的根源终于找到，问题也得以圆满解决，Happy！！！从正常机器来看，icebox所在目录的权限其实是从D:\继承的，所以也可以通过继承父的权限来修改。</li>
+</ul>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/a230ebb1-cbcf-49a6-a45f-04333592270f.png" alt></p>
+<h2 id="什么是users用户组">什么是Users用户组</h2>
+<p><a href="http://blog.163.com/logowx@126/blog/static/62567264200810725416696/" target="_blank" rel="noopener">参考</a></p>
+<p>普通用户组，这个组的用户无法进行有意或无意的改动。因此，用户可以运行经过验证的应用程序，但不可以运行大多数旧版应用程序。Users 组是最安全的组，因为分配给该组的默认权限不允许成员修改操作系统的设置或用户资料。Users 组提供了一个最安全的程序运行环境。在经过 NTFS 格式化的卷上，默认安全设置旨在禁止该组的成员危及操作系统和已安装程序的完整性。用户不能修改系统注册表设置、操作系统文件或程序文件。Users 可以关闭工作站，但不能关闭服务器。Users 可以创建本地组，但只能修改自己创建的本地组。 它受administrator、admin 等管理员的管制和安排。比如：你家或你寝室里只有你自己1台电脑，你可以设置两个用户，一个管理员，另一个为普通用户。这样，在管理员身份下，设置文件的“只读”属性，禁止“添加或删除程序”……你可以放心他人不会修改或删除你的资料，另外，也可以防止他人用你的机器来下载东西。</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0d2f00ba-b586-4121-9705-8f0af1890c4c/index_files/b3370bc7-aa91-407b-b110-03fcd7cc8085.png" alt></p>
+<h2 id="总结">总结</h2>
+<ul>
+<li>调试的过程是一个抽丝拨茧的过程，层层深入，需要足够的耐心和细心，每走一步前先仔细分析一下，然后验证自己的猜想，任何问题一定有其根本原因， 只要不轻易放弃，通过一定技巧及努力，一定是可以找到问题原因的；</li>
+<li>调试的过程可以学到很多新的知识，这个问题中有很多知识其实我也不知道，比如Windows的用户权限知识，但是通过问题线索，顺藤摸瓜，在Google的帮助 下，既学到了新的知识，问题也得以解决，个人能力就是这样提升上来的，但是如果解决问题半途而废，那么隐藏其中的很多原理和相关知识，你就无缘知晓；</li>
+<li>Windows平台下的windbg绝对是神器，大部分问题，如果windbg调不出问题，那基本上可以断定应该不是程序本身的问题，这么好的东西，还不赶快学；</li>
+<li>调试之前一定注意先收集各种线索以及保护好环境，退出调试时一定要detach，以免环境被破坏，这样问题可能就永远无法得见天日；</li>
+<li>浏览了一下ice的手册，在Widnows Services一章，提到安装icegridnode为Windows服务时建议使用LocalService用户，并且发现了icacls命令， 可以用于查看和修改文件的权限，基于这些内容对本问题其实也可以做一些推断；</li>
+<li>最后其实还有一个疑问，既然没有权限，为什么SearchPath的GetLastError错误码是0，如果这个时候从错误码就能判断错误，那么问题就更容易解决了。当然 也许SearchPath内部还调用了其他API函数，导致GetLastError为0，不管怎么样如果SearchPath的接口设计的好一点，查问题就更容易了。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2016/01/11/024-icebox-service-started-failed/" title="icebox服务启动失败问题定位记录">http://zhongpan.tech/2016/01/11/024-icebox-service-started-failed/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/ice/" rel="tag"><i class="fa fa-tag"></i> ice</a>
+            
+              <a href="/tags/icegrid/" rel="tag"><i class="fa fa-tag"></i> icegrid</a>
+            
+              <a href="/tags/windbg/" rel="tag"><i class="fa fa-tag"></i> windbg</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2017/09/07/001-understand-chrono/" rel="prev" title="深入理解std::chrono的时钟Clock">
+                  深入理解std::chrono的时钟Clock <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景知识"><span class="nav-number">1.</span> <span class="nav-text">背景知识</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初步判断"><span class="nav-number">2.</span> <span class="nav-text">初步判断</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#第一次尝试"><span class="nav-number">3.</span> <span class="nav-text">第一次尝试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#继续分析"><span class="nav-number">4.</span> <span class="nav-text">继续分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#icegridnode-exe启动icebox的源代码"><span class="nav-number">5.</span> <span class="nav-text">icegridnode.exe启动icebox的源代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#searchpath函数说明"><span class="nav-number">6.</span> <span class="nav-text">SearchPath函数说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#开始第二次尝试-上windbg"><span class="nav-number">7.</span> <span class="nav-text">开始第二次尝试，上windbg</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#windbg"><span class="nav-number">8.</span> <span class="nav-text">windbg</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#僵局打破"><span class="nav-number">9.</span> <span class="nav-text">僵局打破</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是local-service用户"><span class="nav-number">10.</span> <span class="nav-text">什么是Local Service用户</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#第三次尝试-验证猜想"><span class="nav-number">11.</span> <span class="nav-text">第三次尝试，验证猜想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#进一步找到根源"><span class="nav-number">12.</span> <span class="nav-text">进一步找到根源</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是users用户组"><span class="nav-number">13.</span> <span class="nav-text">什么是Users用户组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">14.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

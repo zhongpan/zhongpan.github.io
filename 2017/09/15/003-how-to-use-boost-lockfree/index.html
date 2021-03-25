@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="boost::lockfree是boost1.53引入的无锁数据结构，包括boost::lockfree::stack、boost::lockfree::queue和boost::lockfree::spsc_queue三种，前两种用于多生产者/多消费者场景，第三个用于单生产者/单消费者场景，下面对它们的使用进行详细介绍，以boost::lockfree::stack为例，其他类似。">
+<meta name="keywords" content="c++,boost">
+<meta property="og:type" content="article">
+<meta property="og:title" content="boost::lockfree使用介绍">
+<meta property="og:url" content="http://zhongpan.tech/2017/09/15/003-how-to-use-boost-lockfree/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="boost::lockfree是boost1.53引入的无锁数据结构，包括boost::lockfree::stack、boost::lockfree::queue和boost::lockfree::spsc_queue三种，前两种用于多生产者/多消费者场景，第三个用于单生产者/单消费者场景，下面对它们的使用进行详细介绍，以boost::lockfree::stack为例，其他类似。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.451Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="boost::lockfree使用介绍">
+<meta name="twitter:description" content="boost::lockfree是boost1.53引入的无锁数据结构，包括boost::lockfree::stack、boost::lockfree::queue和boost::lockfree::spsc_queue三种，前两种用于多生产者/多消费者场景，第三个用于单生产者/单消费者场景，下面对它们的使用进行详细介绍，以boost::lockfree::stack为例，其他类似。">
+  <link rel="canonical" href="http://zhongpan.tech/2017/09/15/003-how-to-use-boost-lockfree/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>boost::lockfree使用介绍 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2017/09/15/003-how-to-use-boost-lockfree/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">boost::lockfree使用介绍
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2017-09-15 16:00:43" itemprop="dateCreated datePublished" datetime="2017-09-15T16:00:43+08:00">2017-09-15</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/c/" itemprop="url" rel="index"><span itemprop="name">c++</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>boost::lockfree是boost1.53引入的无锁数据结构，包括boost::lockfree::stack、boost::lockfree::queue和boost::lockfree::spsc_queue三种，前两种用于多生产者/多消费者场景，第三个用于单生产者/单消费者场景，下面对它们的使用进行详细介绍，以boost::lockfree::stack为例，其他类似。</p>
+<a id="more"></a>
+<h4 id="构造">构造</h4>
+<p>boost::lockfree::stack源代码如下（boost 1.65）：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> BOOST_NO_CXX11_VARIADIC_TEMPLATES</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="class"><span class="keyword">class</span> <span class="title">A0</span>, <span class="title">class</span> <span class="title">A1</span>, <span class="title">class</span> <span class="title">A2</span>&gt;</span></span><br><span class="line"><span class="class">#<span class="title">else</span></span></span><br><span class="line"><span class="class"><span class="title">template</span> &lt;typename T, typename ...Options&gt;</span></span><br><span class="line"><span class="class">#<span class="title">endif</span></span></span><br><span class="line"><span class="class"><span class="title">class</span> <span class="title">stack</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> BOOST_DOXYGEN_INVOKED</span></span><br><span class="line">    BOOST_STATIC_ASSERT(boost::is_copy_constructible&lt;T&gt;::value);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> BOOST_NO_CXX11_VARIADIC_TEMPLATES</span></span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> detail::stack_signature::bind&lt;A0, A1, A2&gt;::type bound_args;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> detail::stack_signature::bind&lt;Options...&gt;::type bound_args;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">bool</span> has_capacity = detail::extract_capacity&lt;bound_args&gt;::has_capacity;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">size_t</span> capacity = detail::extract_capacity&lt;bound_args&gt;::capacity;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">bool</span> fixed_sized = detail::extract_fixed_sized&lt;bound_args&gt;::value;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">bool</span> node_based = !(has_capacity || fixed_sized);</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">const</span> <span class="keyword">bool</span> compile_time_sized = has_capacity;</span><br><span class="line"><span class="comment">/* 省略 */</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">typedef</span> T value_type;</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> implementation_defined::allocator allocator;</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> implementation_defined::size_type size_type;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//! Construct stack</span></span><br><span class="line">    <span class="comment">// @&#123;</span></span><br><span class="line">    <span class="built_in">stack</span>(<span class="keyword">void</span>):</span><br><span class="line">        pool(node_allocator(), capacity)</span><br><span class="line">    &#123;</span><br><span class="line">        BOOST_ASSERT(has_capacity);</span><br><span class="line">        initialize();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> U&gt;</span><br><span class="line">    explicit stack(typename node_allocator::template rebind&lt;U&gt;::other const &amp; alloc):</span><br><span class="line">        pool(alloc, capacity)</span><br><span class="line">    &#123;</span><br><span class="line">        BOOST_STATIC_ASSERT(has_capacity);</span><br><span class="line">        initialize();</span><br><span class="line">    &#125;</span><br><span class="line">    explicit stack(allocator const &amp; alloc):</span><br><span class="line">        pool(alloc, capacity)</span><br><span class="line">    &#123;</span><br><span class="line">        BOOST_ASSERT(has_capacity);</span><br><span class="line">        initialize();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// @&#125;</span></span><br><span class="line">    <span class="comment">//! Construct stack, allocate n nodes for the freelist.</span></span><br><span class="line">    <span class="comment">// @&#123;</span></span><br><span class="line">    explicit stack(size_type n):</span><br><span class="line">        pool(node_allocator(), n)</span><br><span class="line">    &#123;</span><br><span class="line">        BOOST_ASSERT(!has_capacity);</span><br><span class="line">        initialize();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> U&gt;</span><br><span class="line">    <span class="built_in">stack</span>(size_type n, <span class="keyword">typename</span> node_allocator::<span class="keyword">template</span> rebind&lt;U&gt;::other <span class="keyword">const</span> &amp; alloc):</span><br><span class="line">        pool(alloc, n)</span><br><span class="line">    &#123;</span><br><span class="line">        BOOST_STATIC_ASSERT(!has_capacity);</span><br><span class="line">        initialize();</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>boost::lockfree::stack的第一个模板参数是元素类型，后面3个参数是用来配置stack的，没有顺序要求：</p>
+<ul>
+<li>boost::lockfree::fixed_sized：是否固定大小，默认为<code>boost::lockfree::fixed_sized&lt;false&gt;</code>，如果为true，则内部使用数组保存元素，大小不能动态增长；</li>
+<li>boost::lockfree::capacity：编译时设置内部数组大小，设置了capacity意味着一定是<code>boost::lockfree::fixed_sized&lt;true&gt;</code>，和运行时指定大小是互斥的，见下面的例子；</li>
+<li>boost::lockfree::allocator：设置分配器，默认<code>boost::lockfree::allocator&lt;std::allocator&lt;void&gt;&gt;</code>。</li>
+</ul>
+<p>例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">//表示动态大小，初始大小为4，用完了再动态增长；此时必须在构造函数指定初始大小，否则断言失败；</span><br><span class="line">boost::lockfree::stack&lt;int&gt; s(4);</span><br><span class="line"></span><br><span class="line">//表示大小固定，运行时指定初始大小为4，用完后再push就会失败；此时必须在构造函数指定初始大小，否则断言失败；</span><br><span class="line">boost::lockfree::stack&lt;int, boost::lockfree::fixed_sized&lt;true&gt;&gt; s1(4);</span><br><span class="line"></span><br><span class="line">//表示大小固定，编译时指定初始大小为4，用完后再push就会失败；此时不能在构造函数指定初始大小，否则断言失败；</span><br><span class="line">boost::lockfree::stack&lt;int, boost::lockfree::capacity&lt;4&gt;&gt; s2;</span><br><span class="line"></span><br><span class="line">//和上面一样，设置了capacity，fixed_size就总是true</span><br><span class="line">boost::lockfree::stack&lt;int, boost::lockfree::fixed_size&lt;false&gt;, boost::lockfree::capacity&lt;4&gt;&gt; s3;</span><br></pre></td></tr></table></figure>
+<h4 id="成员方法">成员方法</h4>
+<ul>
+<li>push：压入一个元素到容器，除了unsynchronized_，都是线程安全的。所有都是非阻塞的。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">bool push(T const &amp; v)</span><br><span class="line"></span><br><span class="line">bool bounded_push(T const &amp; v)</span><br><span class="line"></span><br><span class="line">template &lt;typename ConstIterator&gt;</span><br><span class="line">ConstIterator push(ConstIterator begin, ConstIterator end)</span><br><span class="line"></span><br><span class="line">template &lt;typename ConstIterator&gt;</span><br><span class="line">ConstIterator bounded_push(ConstIterator begin, ConstIterator end)</span><br><span class="line"></span><br><span class="line">bool unsynchronized_push(T const &amp; v)</span><br><span class="line">ConstIterator unsynchronized_push(ConstIterator begin, ConstIterator end)</span><br></pre></td></tr></table></figure>
+<p>bounded_表示不动态增长，当初始大小用完后再push就会失败；<br>
+unsynchronized_表示非线程安全；</p>
+<ul>
+<li>pop：从容器中弹出一个元素，除了unsynchronized_，都是线程安全的。所有都是非阻塞的。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">bool pop(T &amp; ret)</span><br><span class="line"></span><br><span class="line">template &lt;typename U&gt;</span><br><span class="line">bool pop(U &amp; ret)</span><br><span class="line"></span><br><span class="line">bool unsynchronized_pop(T &amp; ret)</span><br><span class="line"></span><br><span class="line">template &lt;typename U&gt;</span><br><span class="line">bool unsynchronized_pop(U &amp; ret)</span><br></pre></td></tr></table></figure>
+<p>unsynchronized_表示非线程安全；</p>
+<ul>
+<li>consume_：从容器弹出1个或全部元素，并应用某个函数对象。线程安全或阻塞与否取决于函数对象。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">template &lt;typename Functor&gt;</span><br><span class="line">bool consume_one(Functor &amp; f)</span><br><span class="line"></span><br><span class="line">template &lt;typename Functor&gt;</span><br><span class="line">bool consume_one(Functor const &amp; f)</span><br><span class="line"></span><br><span class="line">template &lt;typename Functor&gt;</span><br><span class="line">size_t consume_all(Functor &amp; f)</span><br><span class="line"></span><br><span class="line">template &lt;typename Functor&gt;</span><br><span class="line">size_t consume_all(Functor const &amp; f)</span><br><span class="line"></span><br><span class="line">template &lt;typename Functor&gt;</span><br><span class="line">size_t consume_all_atomic(Functor &amp; f)</span><br><span class="line"></span><br><span class="line">template &lt;typename Functor&gt;</span><br><span class="line">size_t consume_all_atomic(Functor const &amp; f)</span><br><span class="line"></span><br><span class="line">template &lt;typename Functor&gt;</span><br><span class="line">size_t consume_all_atomic_reversed(Functor &amp; f)</span><br><span class="line"></span><br><span class="line">template &lt;typename Functor&gt;</span><br><span class="line">size_t consume_all_atomic_reversed(Functor const &amp; f)</span><br></pre></td></tr></table></figure>
+<p>_one表示只消费1个元素；<br>
+_all表示消费所有元素；<br>
+_atomic表示消费过程是原子的，其间其他操作对其是不可见的。<br>
+_reversed表示倒序消费。</p>
+<ul>
+<li>其他</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">//预分配空闲节点数，和编译时设置capacity互斥；线程安全，可能阻塞</span><br><span class="line">void reserve(size_type n)</span><br><span class="line">//非线程安全</span><br><span class="line">void reserve_unsafe(size_type n)</span><br><span class="line">//判断是否为空</span><br><span class="line">bool empty(void) const</span><br></pre></td></tr></table></figure>
+<h4 id="简单示例">简单示例</h4>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;boost/lockfree/stack.hpp&gt;</span><br><span class="line">int main(int argc, char *argv[])</span><br><span class="line">&#123;</span><br><span class="line">    boost::lockfree::stack&lt;int&gt; s(64);</span><br><span class="line">    //producer</span><br><span class="line">    for (int i = 0; i &lt; 1000; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        s.push(i);</span><br><span class="line">    &#125;</span><br><span class="line">    //consumer</span><br><span class="line">    s.consume_all([](int i)</span><br><span class="line">    &#123;</span><br><span class="line">        std::cout &lt;&lt; i &lt;&lt; std::endl;</span><br><span class="line">    &#125;);</span><br><span class="line">    return 0;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2017/09/15/003-how-to-use-boost-lockfree/" title="boost::lockfree使用介绍">http://zhongpan.tech/2017/09/15/003-how-to-use-boost-lockfree/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/c/" rel="tag"><i class="fa fa-tag"></i> c++</a>
+            
+              <a href="/tags/boost/" rel="tag"><i class="fa fa-tag"></i> boost</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2017/09/11/002-introduction-to-zipkin/" rel="next" title="分布式监控系统zipkin介绍">
+                  <i class="fa fa-chevron-left"></i> 分布式监控系统zipkin介绍
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2017/09/28/004-understanding-of-hexagonal-architecture/" rel="prev" title="深入理解六边形架构">
+                  深入理解六边形架构 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#构造"><span class="nav-number">1.</span> <span class="nav-text">构造</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#成员方法"><span class="nav-number">2.</span> <span class="nav-text">成员方法</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#简单示例"><span class="nav-number">3.</span> <span class="nav-text">简单示例</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

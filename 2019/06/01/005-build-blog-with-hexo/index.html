@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="这又是一篇如何使用github pages和hexo搭建个人博客的文章，是的，网络上已经有无数这类文章，所以我不准备详细记录每一个步骤，对于网络上已经有的，我只列出参考的文章。本文着重选择建立一个个人博客最实用，最需要的配置修改，hexo的扩展性是非常出色的，完全可以定制出非常酷炫的各种效果，这类修改本文并不涉及。另外网络上的一些文章已经比较陈旧，完全参照可能会遇到一些问题，本文进行了一些补充。如">
+<meta name="keywords" content="github pages,hexo,typora">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用github pages和hexo搭建个人博客">
+<meta property="og:url" content="http://zhongpan.tech/2019/06/01/005-build-blog-with-hexo/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="这又是一篇如何使用github pages和hexo搭建个人博客的文章，是的，网络上已经有无数这类文章，所以我不准备详细记录每一个步骤，对于网络上已经有的，我只列出参考的文章。本文着重选择建立一个个人博客最实用，最需要的配置修改，hexo的扩展性是非常出色的，完全可以定制出非常酷炫的各种效果，这类修改本文并不涉及。另外网络上的一些文章已经比较陈旧，完全参照可能会遇到一些问题，本文进行了一些补充。如">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://zhongpan.tech/2019/06/01/005-build-blog-with-hexo/1561532800012.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/06/01/005-build-blog-with-hexo/1561360805318.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/06/01/005-build-blog-with-hexo/1561353591521.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/06/01/005-build-blog-with-hexo/1561520434482.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/06/01/005-build-blog-with-hexo/1561354318677.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.455Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用github pages和hexo搭建个人博客">
+<meta name="twitter:description" content="这又是一篇如何使用github pages和hexo搭建个人博客的文章，是的，网络上已经有无数这类文章，所以我不准备详细记录每一个步骤，对于网络上已经有的，我只列出参考的文章。本文着重选择建立一个个人博客最实用，最需要的配置修改，hexo的扩展性是非常出色的，完全可以定制出非常酷炫的各种效果，这类修改本文并不涉及。另外网络上的一些文章已经比较陈旧，完全参照可能会遇到一些问题，本文进行了一些补充。如">
+<meta name="twitter:image" content="http://zhongpan.tech/2019/06/01/005-build-blog-with-hexo/1561532800012.png">
+  <link rel="canonical" href="http://zhongpan.tech/2019/06/01/005-build-blog-with-hexo/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>使用github pages和hexo搭建个人博客 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2019/06/01/005-build-blog-with-hexo/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">使用github pages和hexo搭建个人博客
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-06-01 11:03:06" itemprop="dateCreated datePublished" datetime="2019-06-01T11:03:06+08:00">2019-06-01</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/blog/" itemprop="url" rel="index"><span itemprop="name">blog</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>这又是一篇如何使用github pages和hexo搭建个人博客的文章，是的，网络上已经有无数这类文章，所以我不准备详细记录每一个步骤，对于网络上已经有的，我只列出参考的文章。本文着重选择建立一个个人博客最实用，最需要的配置修改，hexo的扩展性是非常出色的，完全可以定制出非常酷炫的各种效果，这类修改本文并不涉及。另外网络上的一些文章已经比较陈旧，完全参照可能会遇到一些问题，本文进行了一些补充。如果你正在准备搭建一个个人博客，本文应该可以帮助你，不需要在网络上各种文章中苦苦寻找验证。当然，主要还是要感谢网络上乐于分享的人们，正是在他们的成果之上，才能有本博客，也欢迎大家常来逛逛：<a href="http://zhongpan.tech">http://zhongpan.tech</a>。</p>
+<a id="more"></a>
+<h3 id="使用github-pages建立个人博客">使用github pages建立个人博客</h3>
+<p>github为开发者提供了基于git版本管理的代码和内容的托管服务，他同时提供了github pages功能，允许开发者建立个人网页，并提供了一系列建站模板，以及形如xxx.github.io的二级域名，其中xxx为github账号名，建立github pages的过程和建立仓库的过程类似，<a href="http://xn--xxx-tq9ds6ubgl21e76c18rea.github.io" target="_blank" rel="noopener">只是仓库名总是xxx.github.io</a>，这样就启用github pages了。具体可参考<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup>，关于git ssh key配置可参考<sup class="footnote-ref"><a href="#fn2" id="fnref2">[2]</a></sup>，关于如何绑定自己的域名参考<sup class="footnote-ref"><a href="#fn3" id="fnref3">[3]</a></sup>，其中提到主机记录@的记录值后要加一个.，经过验证其实是不需要的，我是使用的阿里云域名服务。</p>
+<p>github pages也是有限制的，只能托管静态页面，无法运行后端服务，也就不能进行服务端渲染和路由。对于建立复杂的个人网站还是最好使用云主机，对于建立相对简单的个人博客，使用github pages还是不错的选择，对页面的管理和管理git代码类似，开发者会非常亲切。</p>
+<h3 id="使用hexo管理博客">使用hexo管理博客</h3>
+<p>前面已经提到github pages只能托管静态页面，一般的个人博客需要提供标签、分类等功能，通过手工去编辑静态页面是非常不方便的。因此就产生了hexo这样的项目，hexo是使用node.js编写的，用于将用户编写的页面转换成网站静态页面，不仅如此，它还提供了丰富的插件和主题，实现各种客服端网页功能，比如评论、分享等等。本博客使用了<a href="https://hexo.io" target="_blank" rel="noopener">Hexo</a>  v3.9.0进行管理，具体安装步骤参考<sup class="footnote-ref"><a href="#fn1" id="fnref1:1">[1]</a></sup>。hexo初次使用可能会遇到如下问题：</p>
+<ol>
+<li>通过git上传，除了修改站点的_config.yml的deploy属性，注意还需要安装hexo-deployer-git插件：</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm i hexo-deployer-git --save</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>
+<p>每次重新上传后会删掉github pages上的CNAME、README.md文件：可参考<sup class="footnote-ref"><a href="#fn4" id="fnref4">[4]</a></sup>解决。</p>
+</li>
+<li>
+<p>如何使用图片：可参考<sup class="footnote-ref"><a href="#fn5" id="fnref5">[5]</a></sup>。</p>
+<ul>
+<li>
+<p><em>注意图片名中不能包含空格，否则图片无法显示</em></p>
+</li>
+<li>
+<p>注意如果使用了hexo-image-assert插件，就不要用asset_img标签，总是用markdown语法，否则图片显示不了，转换生成的html中的image路径似乎进行了两次转换，导致路径不对</p>
+<p><img src="/2019/06/01/005-build-blog-with-hexo/1561532800012.png" alt="1561532800012"></p>
+</li>
+</ul>
+</li>
+<li>
+<p>如何添加阅读全文：可参考<sup class="footnote-ref"><a href="#fn6" id="fnref6">[6]</a></sup>。</p>
+</li>
+</ol>
+<p>简单总结一下hexo的功能：</p>
+<ol>
+<li>
+<p>页面分post、page和draft三种，hexo中称为layout，post就是博客文章，位于source/_posts目录下，page是独立的页面，位于source目录下同名目录，draft是博客草稿，位于source/_drafts目录下，草稿完成后通过<code>hexo publish</code>命令自动发布到post中。hexo内置支持一些特殊用途页面，如标签、分类、存档，对post进行归类，如标签页面，在Front-matter中定义type属性为tags：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">title:</span> <span class="string">tags</span></span><br><span class="line"><span class="attr">date:</span> <span class="number">2019</span><span class="bullet">-06</span><span class="bullet">-21</span> <span class="number">10</span><span class="string">:15:51</span></span><br><span class="line"><span class="attr">type:</span> <span class="string">"tags"</span></span><br><span class="line"><span class="attr">comments:</span> <span class="literal">false</span></span><br><span class="line"><span class="meta">---</span></span><br></pre></td></tr></table></figure>
+<p>然后在post中使用上述type，例如:</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">title:</span> <span class="string">使用github</span> <span class="string">page和hexo搭建个人博客问题总结</span></span><br><span class="line"><span class="attr">date:</span> <span class="number">2019</span><span class="bullet">-06</span><span class="bullet">-01</span> <span class="number">11</span><span class="string">:03:06</span></span><br><span class="line"><span class="attr">tags:</span></span><br><span class="line"><span class="bullet">  -</span> <span class="string">hexo</span></span><br><span class="line"><span class="meta">---</span></span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>页面都是使用markdown编写，执行<code>hexo g</code>后会转换成html，放到public目录下，最后上传到github的就是public目录下的内容。</p>
+</li>
+<li>
+<p>对于上述标签、分类等页面，hexo会自动生成静态页面，其中包含相应的博客文章链接，观察一下public下的目录结构就会发现这一点。这是通过<code>hexo-generator-tag</code>、<code>hexo-generator-category</code>等插件实现的。</p>
+</li>
+<li>
+<p>网站的最终呈现效果都是通过主题实现的，hexo默认的主题是landscape，还有众多的第三方主题，主题主要使用模板技术生成最终的静态页面，如swig、ejs、jade等，相应的需要安装对应的插件，如<code>hexo-renderer-jade</code>，ejs是默认的。</p>
+</li>
+</ol>
+<h3 id="配置hexo-next主题">配置Hexo-NexT主题</h3>
+<p>hexo默认的主题landscape难以完全满足个人博客需求，试用了几款主题之后，最终我选择了<a href="https://theme-next.org" target="_blank" rel="noopener">NexT.Mist</a> v7.1.2，它的功能非常丰富，安装配置可参考<sup class="footnote-ref"><a href="#fn7" id="fnref7">[7]</a></sup>，参考上述文章，本博客主要做了如下修改，修改过程中发现上述文章有些内容已经过时：</p>
+<ul>
+<li>
+<p>修改底部标签样式：不需要修改<code>Blog\themes\next\layout\_macro\post.swig</code>了，修改主题配置文件_config.yml即可；</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">tag_icon:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>启用canvas_nest动画：注意首先需要参照<a href="https://github.com/theme-next/theme-next-canvas-nest" target="_blank" rel="noopener">https://github.com/theme-next/theme-next-canvas-nest</a>中说明安装canvas-nest库；</p>
+</li>
+<li>
+<p>增加分类和标签页面</p>
+</li>
+<li>
+<p>主页文章添加阴影效果</p>
+</li>
+<li>
+<p>增加字数和阅读时长统计：注意先参照<a href="https://github.com/theme-next/hexo-symbols-count-time" target="_blank" rel="noopener">https://github.com/theme-next/hexo-symbols-count-time</a>中说明安装symbols-count-time库，然后修改站点的_config.yml(注意不是主题的)，增加：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">symbols_count_time:</span></span><br><span class="line"><span class="attr">  symbols:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  time:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  total_symbols:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  total_time:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  exclude_codeblock:</span> <span class="literal">false</span></span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>增加访客数和访问量统计：next主题已经支持busuanzi，直接开启即可；</p>
+</li>
+<li>
+<p>增加评论功能</p>
+</li>
+<li>
+<p>增加分享功能：next已经不支持jiathis，本博客选择了needmoreshare2，直接开启即可；</p>
+</li>
+<li>
+<p>增加站内搜索功能</p>
+</li>
+<li>
+<p>在文章末尾添加“文章结束”标记：图标换了一下</p>
+</li>
+<li>
+<p>侧边栏社交小图标设置</p>
+</li>
+<li>
+<p>底部隐藏由Hexo强力驱动、主题–NexT.Mist</p>
+</li>
+<li>
+<p>底部用户图标换成桃心</p>
+</li>
+<li>
+<p>设置头像：没有设置动画效果</p>
+</li>
+<li>
+<p>添加版权信息：next已经支持，在creative_commons这个部分，选择合适的license即可。</p>
+</li>
+<li>
+<p>添加网页顶部进度加载条</p>
+</li>
+</ul>
+<p>另外还增加了：</p>
+<ul>
+<li>
+<p>开启阅读进度：参照<a href="https://github.com/theme-next/theme-next-reading-progress" target="_blank" rel="noopener">https://github.com/theme-next/theme-next-reading-progress</a>安装theme-next-reading-progress；修改主题的_config.yml，将reading_progress的enable置为true；</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">reading_progress:</span></span><br><span class="line"><span class="attr">  enable:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  color:</span> <span class="string">"#37c6c0"</span></span><br><span class="line"><span class="attr">  height:</span> <span class="number">2</span><span class="string">px</span></span><br></pre></td></tr></table></figure>
+<p>其效果是在文章顶部增加一个进度条显示阅读进度。</p>
+</li>
+<li>
+<p>开启书签：参照<a href="https://github.com/theme-next/theme-next-bookmark" target="_blank" rel="noopener">https://github.com/theme-next/theme-next-bookmark</a>安装theme-next-bookmark；修改主题的_config.yml，将bookmark的enable置为true；</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">bookmark:</span></span><br><span class="line"><span class="attr">  enable:</span> <span class="literal">true</span></span><br><span class="line">  <span class="comment"># If auto, save the reading position when closing the page or clicking the bookmark-icon.</span></span><br><span class="line">  <span class="comment"># If manual, only save it by clicking the bookmark-icon.</span></span><br><span class="line"><span class="attr">  save:</span> <span class="string">auto</span></span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>在使用hext主题时遇到一个问题：</p>
+<ul>
+<li>
+<p>post中标题级别必须连续，否则post的toc出现奇怪的错乱问题：</p>
+<p>例如post中第一层用h1，第二层用h3，toc就会这样：</p>
+<p><img src="/2019/06/01/005-build-blog-with-hexo/1561360805318.png" alt="1561360805318"></p>
+<p>改为第一层用h1，第二层用h2，保持连续，toc就正常了：</p>
+<p><img src="/2019/06/01/005-build-blog-with-hexo/1561353591521.png" alt="1561353591521"></p>
+</li>
+</ul>
+<h3 id="markdown编辑工具">markdown编辑工具</h3>
+<p>最后建议找一款合适的markdown编辑工具，我是使用的<a href="https://www.typora.io/" target="_blank" rel="noopener">Typora</a>，至此建立博客的各项准备完全就绪了，接下来就可以愉快的书写了，Typora和hexo配合使用会遇到如下问题：</p>
+<ol>
+<li>
+<p>图片在typora中显示问题</p>
+<p>前面介绍过在hexo插入图片推荐使用hexo-asset-image插件的方法，这时图片是放在post同名的目录中，而hexo的markdown中引用图片并没有加上目录名，这样在typora中就显示不了图片。解决方法参考<sup class="footnote-ref"><a href="#fn8" id="fnref8">[8]</a></sup>，经过我的验证，可行方法如下，其中xxxxxx为post名：</p>
+<ul>
+<li>
+<p>在Front-matter中加入typora-copy-images-to或者在typora全局偏好设置中设置，其中xxxxxx为post名</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">typora-copy-images-to:</span> <span class="string">xxxxxx</span></span><br></pre></td></tr></table></figure>
+<p>或者如下图在typora设置：<br>
+<img src="/2019/06/01/005-build-blog-with-hexo/1561520434482.png" alt="1561520434482"></p>
+</li>
+<li>
+<p>在Front-matter中加入typora-root-url，否则markdown中会带有目录名xxxxxx，这时在typora中可以显示图片，但是hexo中不能</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">typora-root-url:</span> <span class="string">xxxxxx</span></span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>进行上述修改后，在typora中复制粘贴或插入本地图片后，typora会自动放到xxxxxx目录下，并生成markdown如下：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">![<span class="string">name</span>](<span class="link">/name.png</span>)</span><br></pre></td></tr></table></figure>
+<p><strong>这里还是有一点问题，就是路径前面有一个/，在typora中显示是正常的，但是在hexo中无法显示图片，需要删除/</strong>。</p>
+</li>
+</ul>
+</li>
+<li>
+<p>hexo转换后的显示效果并非和typora一样，目前碰到的一个问题是对Reference-style links转换后，引用的链接列表并没有显示，而在typora中是显示的。所以后来只有换成了Footnotes。typora中对引用的链接列表显示效果如下；</p>
+<p><img src="/2019/06/01/005-build-blog-with-hexo/1561354318677.png" alt="1561354318677"></p>
+</li>
+</ol>
+<h3 id="支持emoji表情">支持emoji表情</h3>
+<p>hexo默认的markdown渲染器是不支持emoji的，可以使用emoji相关插件或者更换markdown转换器，我是选择的更换markdown转换器，具体可参考<sup class="footnote-ref"><a href="#fn9" id="fnref9">[9]</a></sup>。除了emoji，我还用到了它的Footnote功能，所以我还安装了 footnote插件，如需其他插件，同样需要先安装：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">npm un hexo-renderer-marked --save</span><br><span class="line">npm i hexo-renderer-markdown-it --save</span><br><span class="line">npm install markdown-it-emoji --save</span><br><span class="line">npm install markdown-it-footnote --save</span><br></pre></td></tr></table></figure>
+<p>另外其配置文件，我将permalink置为false了：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">markdown:</span></span><br><span class="line"><span class="attr">  render:</span></span><br><span class="line"><span class="attr">    html:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">    xhtmlOut:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">    breaks:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">    linkify:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">    typographer:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">    quotes:</span> <span class="string">'“”‘’'</span></span><br><span class="line"><span class="attr">  plugins:</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">markdown-it-footnote</span></span><br><span class="line">    <span class="comment">#- markdown-it-sup</span></span><br><span class="line">    <span class="comment">#- markdown-it-sub</span></span><br><span class="line">    <span class="comment">#- markdown-it-abbr</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">markdown-it-emoji</span></span><br><span class="line"><span class="attr">  anchors:</span></span><br><span class="line"><span class="attr">    level:</span> <span class="number">2</span></span><br><span class="line"><span class="attr">    collisionSuffix:</span> <span class="string">'v'</span></span><br><span class="line"><span class="attr">    permalink:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">    permalinkClass:</span> <span class="string">header-anchor</span></span><br><span class="line"><span class="attr">    permalinkSymbol:</span> <span class="string">¶</span></span><br></pre></td></tr></table></figure>
+<h3 id="参考文章">参考文章</h3>
+<hr class="footnotes-sep">
+<section class="footnotes">
+<ol class="footnotes-list">
+<li id="fn1" class="footnote-item"><p><a href="https://www.jianshu.com/p/21c94eb7bcd1" target="_blank" rel="noopener">绝配：hexo+next主题及我走过的坑</a> <a href="#fnref1" class="footnote-backref">↩</a> <a href="#fnref1:1" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn2" class="footnote-item"><p><a href="https://blog.csdn.net/lqlqlq007/article/details/78983879" target="_blank" rel="noopener">git ssh key配置</a> <a href="#fnref2" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn3" class="footnote-item"><p><a href="https://blog.csdn.net/yuan3065/article/details/51594454" target="_blank" rel="noopener">绑定域名到 GitHub Pages</a> <a href="#fnref3" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn4" class="footnote-item"><p><a href="https://www.cnblogs.com/chengxs/p/7496265.html" target="_blank" rel="noopener">避免read.me，CNAME文件的覆盖，手动改github page的域名</a> <a href="#fnref4" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn5" class="footnote-item"><p><a href="https://blog.csdn.net/u010828718/article/details/55505631" target="_blank" rel="noopener">Hexo中添加本地图片</a> <a href="#fnref5" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn6" class="footnote-item"><p><a href="https://www.cnblogs.com/php-linux/p/8417887.html" target="_blank" rel="noopener">Hexo-设置阅读全文</a> <a href="#fnref6" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn7" class="footnote-item"><p><a href="https://www.jianshu.com/p/9f0e90cc32c2" target="_blank" rel="noopener">Hexo-NexT配置超炫网页效果</a> <a href="#fnref7" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn8" class="footnote-item"><p><a href="https://www.jianshu.com/p/81a40a2c6514" target="_blank" rel="noopener">hexo与typora结合</a> <a href="#fnref8" class="footnote-backref">↩</a></p>
+</li>
+<li id="fn9" class="footnote-item"><p><a href="https://kinboyw.github.io/2018/10/29/Hexo-NexT-%E5%BC%80%E5%90%AF-emoji" target="_blank" rel="noopener">Hexo NexT 开启 emoji</a> <a href="#fnref9" class="footnote-backref">↩</a></p>
+</li>
+</ol>
+</section>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2019/06/01/005-build-blog-with-hexo/" title="使用github pages和hexo搭建个人博客">http://zhongpan.tech/2019/06/01/005-build-blog-with-hexo/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/github-pages/" rel="tag"><i class="fa fa-tag"></i> github pages</a>
+            
+              <a href="/tags/hexo/" rel="tag"><i class="fa fa-tag"></i> hexo</a>
+            
+              <a href="/tags/typora/" rel="tag"><i class="fa fa-tag"></i> typora</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2017/09/28/004-understanding-of-hexagonal-architecture/" rel="next" title="深入理解六边形架构">
+                  <i class="fa fa-chevron-left"></i> 深入理解六边形架构
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/06/03/006-docker-ucp-failure-set-up/" rel="prev" title="记一次失败的Windows下使用Docker UCP搭建容器集群">
+                  记一次失败的Windows下使用Docker UCP搭建容器集群 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用github-pages建立个人博客"><span class="nav-number">1.</span> <span class="nav-text">使用github pages建立个人博客</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用hexo管理博客"><span class="nav-number">2.</span> <span class="nav-text">使用hexo管理博客</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置hexo-next主题"><span class="nav-number">3.</span> <span class="nav-text">配置Hexo-NexT主题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#markdown编辑工具"><span class="nav-number">4.</span> <span class="nav-text">markdown编辑工具</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#支持emoji表情"><span class="nav-number">5.</span> <span class="nav-text">支持emoji表情</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考文章"><span class="nav-number">6.</span> <span class="nav-text">参考文章</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

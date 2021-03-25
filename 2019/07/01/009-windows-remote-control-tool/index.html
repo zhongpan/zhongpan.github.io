@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="开发调试过程中少不了使用远程桌面访问其他机器，最近Windows的远程桌面无法使用，只得寻找其他替代方案，经过一番搜索试用之后，有几款软件基本能够达到和Windows远程桌面类似效果，选择主要考量如下因素：  免费解决方案，商业的首先排除，如Teamviewer，AnyDesk，Radmin等； 清晰度和速度基本接近Windows的RDP，这里不得不说Windows下的RDP确实是最好的，没有之一">
+<meta name="keywords" content="remote control">
+<meta property="og:type" content="article">
+<meta property="og:title" content="选择最佳的Windows远程桌面替代工具">
+<meta property="og:url" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="开发调试过程中少不了使用远程桌面访问其他机器，最近Windows的远程桌面无法使用，只得寻找其他替代方案，经过一番搜索试用之后，有几款软件基本能够达到和Windows远程桌面类似效果，选择主要考量如下因素：  免费解决方案，商业的首先排除，如Teamviewer，AnyDesk，Radmin等； 清晰度和速度基本接近Windows的RDP，这里不得不说Windows下的RDP确实是最好的，没有之一">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1561973621009.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1561973678139.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562029789711.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1561973719985.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562048456916.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562048774266.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562049333916.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562060303054.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562060507557.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562060579129.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562060691053.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562060861608.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562061173605.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562061324063.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1562061257353.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.455Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="选择最佳的Windows远程桌面替代工具">
+<meta name="twitter:description" content="开发调试过程中少不了使用远程桌面访问其他机器，最近Windows的远程桌面无法使用，只得寻找其他替代方案，经过一番搜索试用之后，有几款软件基本能够达到和Windows远程桌面类似效果，选择主要考量如下因素：  免费解决方案，商业的首先排除，如Teamviewer，AnyDesk，Radmin等； 清晰度和速度基本接近Windows的RDP，这里不得不说Windows下的RDP确实是最好的，没有之一">
+<meta name="twitter:image" content="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/1561973621009.png">
+  <link rel="canonical" href="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>选择最佳的Windows远程桌面替代工具 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">选择最佳的Windows远程桌面替代工具
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-07-01 16:47:49" itemprop="dateCreated datePublished" datetime="2019-07-01T16:47:49+08:00">2019-07-01</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/devtool/" itemprop="url" rel="index"><span itemprop="name">devtool</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>开发调试过程中少不了使用远程桌面访问其他机器，最近Windows的远程桌面无法使用，只得寻找其他替代方案，经过一番搜索试用之后，有几款软件基本能够达到和Windows远程桌面类似效果，选择主要考量如下因素：</p>
+<ul>
+<li>免费解决方案，商业的首先排除，如Teamviewer，AnyDesk，Radmin等；</li>
+<li>清晰度和速度基本接近Windows的RDP，这里不得不说Windows下的RDP确实是最好的，没有之一；</li>
+</ul>
+<a id="more"></a>
+<h2 id="ultravnc">UltraVNC</h2>
+<p>说到远程访问，首先一定会想到VNC，VNC在Windows访问Linux中用的比较多，当然也可以Windows访问Windows，VNC的实现有几个主要的软件，包括：<a href="http://www.realvnc.com/" target="_blank" rel="noopener">RealVNC</a>、<a href="http://www.tightvnc.com/" target="_blank" rel="noopener">TightVNC</a>（还有一个源于它的<a href="https://tigervnc.org/" target="_blank" rel="noopener">TigerVNC</a>）、<a href="http://ultravnc.com/" target="_blank" rel="noopener">UltraVNC</a>，它们都基于最初的AT&amp;T开源的VNC，协议上彼此兼容，各有所长，也有相互吸收，其中功能性上UltraVNC最为强大，支持文件传输等功能。</p>
+<p>首先试用了UltraVNC，但是结果让人大跌眼镜，速度慢的一塌糊涂。转而找到了TigerVNC，号称高性能，但是速度和UltraVNC差不多。经过一番搜索之后，原来UltraVNC需要配合<a href="http://www.uvnc.com/features/driver.html" target="_blank" rel="noopener">Video Mirror Driver</a>一起使用才能有更好的速度，安装方法如下：</p>
+<ul>
+<li>
+<p>下载<a href="http://support1.uvnc.com/download/UVNC_MD_SDK.zip" target="_blank" rel="noopener">Mirror Driver SDK</a>，根据操作系统不同选择不同的驱动，例如Windows 7 64位可选择driver\vista64目录下的</p>
+</li>
+<li>
+<p>执行<code>setupdrv.exe install</code>或相应批处理脚本进行安装，安装成功后会多出显示设备</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1561973621009.png" alt="1561973621009"></p>
+</li>
+<li>
+<p>UltraVNC服务端设置，勾选Mirror Driver。注意UltraVNC必须和Mirror Driver的位数一致，如果是64位操作系统，就必须都是64位。</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1561973678139.png" alt="1561973678139"></p>
+<p>点击check the Mirror Driver，会显示：</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1562029789711.png" alt="1562029789711"></p>
+<p>如果有客户端连接上，再点击check the Mirror Driver，会显示：</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1561973719985.png" alt="1561973719985"></p>
+</li>
+</ul>
+<p>启用Mirror Driver后，确实速度流畅了许多，基本满足使用，但是相比RDP，在流畅度上还是差一些。</p>
+<h2 id="trueremote">TrueRemote</h2>
+<p>无意中发现了这款软件，非常轻量，软件压缩包只有151K，但是流畅度上让人映像非常深刻，并且支持文件传输，完全满足基本的使用需求。但是这款软件最后更新是2012年，作者后续已经没有维护了。这款软件是只支持Windows的，官方主页：<a href="http://blog.x-row.net/?p=47" target="_blank" rel="noopener">http://blog.x-row.net/?p=47</a>，使用方法非常简单：</p>
+<ul>
+<li>服务端</li>
+</ul>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1562048456916.png" alt="1562048456916"></p>
+<p>Control选择Off就是只读控制，Service选择Entry后会安装成Windows服务。</p>
+<ul>
+<li>
+<p>客户端</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1562048774266.png" alt="1562048774266"></p>
+<p>注意Password不会自动保存，可以修改tureremote.ini文件保存。Scroll类似UltraVNC的Scale to window，选Off表示不缩放，就会出现滚动条，但是这时是最清晰的，否则就会缩放到合适大小，但是会出现稍许模糊。Codec貌似只有TrueRemote和Toshiba YUV411两个可用，效果差不多。</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1562049333916.png" alt="1562049333916"></p>
+<p>连接上之后效果如上，标题栏菜单中加入了一些控制菜单，发送文件可以从这里操作。</p>
+</li>
+</ul>
+<h2 id="nomachine">NoMachine</h2>
+<p><a href="https://www.nomachine.com" target="_blank" rel="noopener">NoMachine</a>分for everybody和enterprise两个版本，for everybody版本是免费的。NoMachine实现了自有的nx协议，速度很快，流畅程度接近RDP。</p>
+<p>安装后需要重启，服务端已经自动安装为Windows服务，默认使用4000端口。服务端参数设置如下：</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1562060303054.png" alt="1562060303054"></p>
+<p>打开客户端如下：</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1562060507557.png" alt="1562060507557"></p>
+<p>建立连接：</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1562060579129.png" alt="1562060579129"></p>
+<p>协议支持NX和SSH两种，认证方式支持如下三种：<br>
+<img src="/2019/07/01/009-windows-remote-control-tool/1562060691053.png" alt="1562060691053"></p>
+<p>登陆之后效果如下，我发一个细节，屏幕会随着鼠标移动自动滚动，非常人性化，给一个大大的赞👍:</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1562060861608.png" alt="1562060861608"></p>
+<p>通过点击右上角或者快捷键Ctrl+Alt+0可以调出设置界面，功能非常丰富完善：</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1562061173605.png" alt="1562061173605"></p>
+<p>例如关于显示设置如下：</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1562061324063.png" alt="1562061324063"></p>
+<p>关于设备设置如下：</p>
+<p><img src="/2019/07/01/009-windows-remote-control-tool/1562061257353.png" alt="1562061257353"></p>
+<h2 id="总结">总结</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>流畅度</th>
+<th>功能</th>
+<th>轻量</th>
+<th>跨平台</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UltraVNC</td>
+<td>⭐️⭐️⭐️<br>需要启用mirror driver</td>
+<td>⭐️⭐️⭐️⭐️</td>
+<td>⭐️⭐️⭐️</td>
+<td>❌<br>仅支持Windows</td>
+</tr>
+<tr>
+<td>TrueRemote</td>
+<td>⭐️⭐️⭐️</td>
+<td>⭐️⭐️⭐️<br>不支持全屏，无法发送Ctrl+Alt+Delete</td>
+<td>⭐️⭐️⭐️⭐️</td>
+<td>❌<br>仅支持Windows</td>
+</tr>
+<tr>
+<td>NoMachine</td>
+<td>⭐️⭐️⭐️</td>
+<td>⭐️⭐️⭐️⭐️</td>
+<td>⭐️⭐️⭐️</td>
+<td>✔️<br>还支持mobile</td>
+</tr>
+</tbody>
+</table>
+<p>通过以上对比，首选推荐NoMachine，各方面都比较出色，特别是多平台支持。其次是TrueRemote，基本满足使用，其他特点是小巧轻量。UltraVNC使用过程中出现过客户端挂死情况，不是特别稳定，其用户界面也不太简洁和友好。</p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/" title="选择最佳的Windows远程桌面替代工具">http://zhongpan.tech/2019/07/01/009-windows-remote-control-tool/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/remote-control/" rel="tag"><i class="fa fa-tag"></i> remote control</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/06/26/008-cmake-with-ninja/" rel="next" title="CMake使用Ninja加速C++代码构建过程">
+                  <i class="fa fa-chevron-left"></i> CMake使用Ninja加速C++代码构建过程
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/07/04/010-cpp-logging-framework-benchmark/" rel="prev" title="C++日志框架基准测试及源码分析">
+                  C++日志框架基准测试及源码分析 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#ultravnc"><span class="nav-number">1.</span> <span class="nav-text">UltraVNC</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#trueremote"><span class="nav-number">2.</span> <span class="nav-text">TrueRemote</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#nomachine"><span class="nav-number">3.</span> <span class="nav-text">NoMachine</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

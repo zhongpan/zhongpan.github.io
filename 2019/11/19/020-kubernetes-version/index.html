@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="通过源码编译kubernetes时，可以使用go build(或go install)单独编译某个组件，例如对于apiserver，可以cd到k8s.io/kubernetes/cmd/kube-apiserver，然后执行： 1go install -i -v -gcflags=&apos;-N -l&apos; 编译结果安装到GOBIN下，即GOBIN/kube-apiserver，使用这种方式编译时有一个小问题">
+<meta name="keywords" content="k8s,version">
+<meta property="og:type" content="article">
+<meta property="og:title" content="kubernetes版本号是怎么生成的">
+<meta property="og:url" content="http://zhongpan.tech/2019/11/19/020-kubernetes-version/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="通过源码编译kubernetes时，可以使用go build(或go install)单独编译某个组件，例如对于apiserver，可以cd到k8s.io/kubernetes/cmd/kube-apiserver，然后执行： 1go install -i -v -gcflags=&apos;-N -l&apos; 编译结果安装到GOBIN下，即GOBIN/kube-apiserver，使用这种方式编译时有一个小问题">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.463Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="kubernetes版本号是怎么生成的">
+<meta name="twitter:description" content="通过源码编译kubernetes时，可以使用go build(或go install)单独编译某个组件，例如对于apiserver，可以cd到k8s.io/kubernetes/cmd/kube-apiserver，然后执行： 1go install -i -v -gcflags=&apos;-N -l&apos; 编译结果安装到GOBIN下，即GOBIN/kube-apiserver，使用这种方式编译时有一个小问题">
+  <link rel="canonical" href="http://zhongpan.tech/2019/11/19/020-kubernetes-version/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>kubernetes版本号是怎么生成的 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2019/11/19/020-kubernetes-version/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">kubernetes版本号是怎么生成的
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-11-19 09:02:08" itemprop="dateCreated datePublished" datetime="2019-11-19T09:02:08+08:00">2019-11-19</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>通过源码编译kubernetes时，可以使用go build(或go install)单独编译某个组件，例如对于apiserver，<a href="http://xn--cdk8s-ok2hx0rc1d.io/kubernetes/cmd/kube-apiserver%EF%BC%8C%E7%84%B6%E5%90%8E%E6%89%A7%E8%A1%8C%EF%BC%9A" target="_blank" rel="noopener">可以cd到k8s.io/kubernetes/cmd/kube-apiserver，然后执行：</a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go install -i -v -gcflags='-N -l'</span><br></pre></td></tr></table></figure>
+<p>编译结果安装到GOBIN下，即GOBIN/kube-apiserver，使用这种方式编译时有一个小问题，版本号是一段奇怪的字符串：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kube-apiserver --version</span><br><span class="line">Kubernetes v0.0.0-master+$Format:%h$</span><br></pre></td></tr></table></figure>
+<p>在遇到一些需要依赖kubernetes版本号的场景就会有问题，例如使用helm安装chart时，有些chart对kubernetes版本号有要求，就会无法安装。</p>
+<a id="more"></a>
+<h2 id="有哪些版本号">有哪些版本号</h2>
+<p>kubernetes在很多场合都会看到版本号，我们先梳理一下。</p>
+<ol>
+<li>
+<p>–version</p>
+<p>每个组件有–version参数，这时输出本组件的版本号。</p>
+</li>
+<li>
+<p>kubectl version</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl version</span><br><span class="line">Client Version: version.Info&#123;Major:"", Minor:"", GitVersion:"v0.0.0-master+$Format:%h$", GitCommit:"$Format:%H$", GitTreeState:"", BuildDate:"1970-01-01T00:00:00Z", GoVersion:"go1.12.9", Compiler:"gc", Platform:"linux/amd64"&#125;</span><br><span class="line">Server Version: version.Info&#123;Major:"1", Minor:"17+", GitVersion:"v1.17.0-alpha.3.227+7d13dfe3c34f44-dirty", GitCommit:"7d13dfe3c34f44ff505afe397c7b05fe6e5414ed", GitTreeState:"dirty", BuildDate:"2019-11-18T14:42:24Z", GoVersion:"go1.12.9", Compiler:"gc", Platform:"linux/amd64"&#125;</span><br></pre></td></tr></table></figure>
+<p>Client Version即kubectl的版本号，Server Version即apiserver的版本号。</p>
+</li>
+<li>
+<p>kubectl get nodes</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kubectl get nodes</span><br><span class="line">NAME          STATUS   ROLES    AGE   VERSION</span><br><span class="line">10.10.10.15   Ready    &lt;none&gt;   12d   v1.17.0-alpha.3.227+7d13dfe3c34f44-dirty</span><br><span class="line">10.10.10.16   Ready    &lt;none&gt;   11d   v1.17.0-alpha.3.227+7d13dfe3c34f44-dirty</span><br></pre></td></tr></table></figure>
+<p>此处的版本号为kubelet的版本号。</p>
+</li>
+</ol>
+<h2 id="版本号的含义">版本号的含义</h2>
+<p>上述长长的一串版本号v1.17.0-alpha.3.227+7d13dfe3c34f44-dirty，看起来非常复杂，其实熟悉git的同学一眼就能看出正是git的源码版本信息。</p>
+<table>
+<thead>
+<tr>
+<th>分解字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1.17.0-alpha.3</td>
+<td>上一次tag，表示v1.17.0的第3个alpha版本</td>
+</tr>
+<tr>
+<td>227</td>
+<td>上一次tag之后提交数</td>
+</tr>
+<tr>
+<td>7d13dfe3c34f44</td>
+<td>最新一次提交id</td>
+</tr>
+<tr>
+<td>dirty</td>
+<td>源码是否修改</td>
+</tr>
+</tbody>
+</table>
+<p><a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/release/versioning.md" target="_blank" rel="noopener">这里</a>描述了kubernetes的版本管理规则，据此可以看出上述版本一定是在master分支上。</p>
+<h2 id="版本号如何生成">版本号如何生成</h2>
+<p>那么版本号是如何写入到程序中的，主要有两个步骤：</p>
+<ol>
+<li>
+<p>从git获取源码版本信息</p>
+<p>v1.17.0-alpha.3.227+7d13dfe3c34f44这一段是通过如下命令获取，并稍作转换：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git describe --tags --match='v*' --abbrev=14</span><br><span class="line">v1.17.0-alpha.3-227-g7d13dfe3c34f44</span><br></pre></td></tr></table></figure>
+<p>如果tag之后没有再提交过，则后面就没有提交次数和最新提交id，只有tag，这通常发生在release分支上最后释放时。</p>
+<p>-dirty是通过如下命令获取，如果源码修改过则版本号添加-dirty：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git status --porcelain</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<ol start="2">
+<li>
+<p>通过ldflags将上述获取版本信息写入程序</p>
+<p>golang中在链接阶段可以覆盖程序中的全局变量，通过在go build时增加如下参数。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-ldflags -X importpath.name=value</span><br></pre></td></tr></table></figure>
+<p>其中importpath为包的导入路径，name为变量名，value为新的值。</p>
+<p>对于kubernetes，版本信息相关的变量，<a href="http://xn--k8s-198dp2rzxhtli5vy524b.io/component-base/version%E5%8C%85%E4%B8%AD%EF%BC%8C%E6%BA%90%E7%A0%81%E8%A7%81k8s.io/component-base/version/base.go%EF%BC%8C%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%AE%9A%E4%B9%89%E5%9C%A8k8s.io/client-go/pkg/version%E4%B8%AD%EF%BC%8C%E6%BA%90%E7%A0%81%E8%A7%81k8s.io/client-go/pkg/version/base.go%EF%BC%8C%E4%B8%A4%E4%B8%AAbase.go%E7%9A%84%E5%86%85%E5%AE%B9%E6%98%AF%E4%B8%80%E6%A0%B7%E7%9A%84%EF%BC%9A" target="_blank" rel="noopener">服务端定义在k8s.io/component-base/version包中，源码见k8s.io/component-base/version/base.go，客户端定义在k8s.io/client-go/pkg/version中，源码见k8s.io/client-go/pkg/version/base.go，两个base.go的内容是一样的：</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> (</span><br><span class="line">	<span class="comment">// <span class="doctag">TODO:</span> Deprecate gitMajor and gitMinor, use only gitVersion</span></span><br><span class="line">	<span class="comment">// instead. First step in deprecation, keep the fields but make</span></span><br><span class="line">	<span class="comment">// them irrelevant. (Next we'll take it out, which may muck with</span></span><br><span class="line">	<span class="comment">// scripts consuming the kubectl version output - but most of</span></span><br><span class="line">	<span class="comment">// these should be looking at gitVersion already anyways.)</span></span><br><span class="line">	gitMajor <span class="keyword">string</span> = <span class="string">""</span> <span class="comment">// major version, always numeric</span></span><br><span class="line">	gitMinor <span class="keyword">string</span> = <span class="string">""</span> <span class="comment">// minor version, numeric possibly followed by "+"</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// semantic version, derived by build scripts (see</span></span><br><span class="line">	<span class="comment">// https://git.k8s.io/community/contributors/design-proposals/release/versioning.md</span></span><br><span class="line">	<span class="comment">// for a detailed discussion of this field)</span></span><br><span class="line">	<span class="comment">//</span></span><br><span class="line">	<span class="comment">// <span class="doctag">TODO:</span> This field is still called "gitVersion" for legacy</span></span><br><span class="line">	<span class="comment">// reasons. For prerelease versions, the build metadata on the</span></span><br><span class="line">	<span class="comment">// semantic version is a git hash, but the version itself is no</span></span><br><span class="line">	<span class="comment">// longer the direct output of "git describe", but a slight</span></span><br><span class="line">	<span class="comment">// translation to be semver compliant.</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// <span class="doctag">NOTE:</span> The $Format strings are replaced during 'git archive' thanks to the</span></span><br><span class="line">	<span class="comment">// companion .gitattributes file containing 'export-subst' in this same</span></span><br><span class="line">	<span class="comment">// directory.  See also https://git-scm.com/docs/gitattributes</span></span><br><span class="line">	gitVersion   <span class="keyword">string</span> = <span class="string">"v0.0.0-master+$Format:%h$"</span></span><br><span class="line">	gitCommit    <span class="keyword">string</span> = <span class="string">"$Format:%H$"</span> <span class="comment">// sha1 from git, output of $(git rev-parse HEAD)</span></span><br><span class="line">	gitTreeState <span class="keyword">string</span> = <span class="string">""</span>            <span class="comment">// state of git tree, either "clean" or "dirty"</span></span><br><span class="line"></span><br><span class="line">	buildDate <span class="keyword">string</span> = <span class="string">"1970-01-01T00:00:00Z"</span> <span class="comment">// build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>一开始出现的奇怪的字符串<code>v0.0.0-master+$Format:%h$</code>就是出在这里。当然直接修改这个文件也可以得到正确的版本号，但是每次源码版本变化都需要修改，非常麻烦，采用ldflags就非常简单：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go build -ldflags='-X k8s.io/component-base/version.gitVersion=v1.17.0-alpha.3.227+7d13dfe3c34f44-dirty -X k8s.io/client-go/pkg/version.gitVersion=v1.17.0-alpha.3.227+7d13dfe3c34f44-dirty'</span><br></pre></td></tr></table></figure>
+<p>上述命令就将gitVersion变量修改为从git中得到的源码版本号，这个过程通过脚本完全可以做到自动化，<a href="http://xn--k8s-i68d945dswnttbi63hxz1a.io/kubernetes/hack/lib/version.sh%E3%80%82" target="_blank" rel="noopener">这个脚本就是k8s.io/kubernetes/hack/lib/version.sh。</a></p>
+</li>
+</ol>
+<h2 id="go-build时植入版本号">go build时植入版本号</h2>
+<p>在使用make编译kubernetes时会自动从git获取版本信息并通过ldflags植入程序中，但是通过go build编译时kubernetes并没有提供脚本实现上述过程，这就导致了版本号总是<code>v0.0.0-master+$Format:%h$</code>。</p>
+<p>为了解决上述问题，<a href="http://xn--k8s-qz3el28af02e8zt.io/kubernetes/hack/lib/version.sh%E7%A8%8D%E4%BD%9C%E6%94%B9%E9%80%A0%EF%BC%8C%E5%A4%8D%E7%94%A8%E5%85%B6%E9%80%BB%E8%BE%91%E5%8D%B3%E5%8F%AF%EF%BC%9A" target="_blank" rel="noopener">只需要对k8s.io/kubernetes/hack/lib/version.sh稍作改造，复用其逻辑即可：</a></p>
+<p><a href="http://xn--version-116kn4hvs6e6m3h.sh" target="_blank" rel="noopener">首先修改version.sh</a>，因为启用了go module，如果你没有显示启用可以不需要修改：</p>
+   <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ldflags+=(</span><br><span class="line">  "-X '$&#123;KUBE_GO_PACKAGE&#125;/vendor/k8s.io/client-go/pkg/version.$&#123;key&#125;=$&#123;val&#125;'"</span><br><span class="line">  "-X '$&#123;KUBE_GO_PACKAGE&#125;/vendor/k8s.io/component-base/version.$&#123;key&#125;=$&#123;val&#125;'"</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>改为：</p>
+   <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">ldflags+=(</span><br><span class="line">  "-X '$&#123;KUBE_GO_PACKAGE&#125;/client-go/pkg/version.$&#123;key&#125;=$&#123;val&#125;'"</span><br><span class="line">  "-X '$&#123;KUBE_GO_PACKAGE&#125;/component-base/version.$&#123;key&#125;=$&#123;val&#125;'"</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p><a href="http://xn--k8s-u33ew5lnq3c.io/kubernetes/hack%E7%9B%AE%E5%BD%95%E4%B8%8B%E6%B7%BB%E5%8A%A0%E8%84%9A%E6%9C%AC%E6%96%87%E4%BB%B6goinstall%E5%A6%82%E4%B8%8B%EF%BC%9A" target="_blank" rel="noopener">然后在k8s.io/kubernetes/hack目录下添加脚本文件goinstall如下：</a></p>
+   <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/usr/bin/env bash</span></span><br><span class="line">basepath=$(cd `dirname $0`; pwd)</span><br><span class="line">KUBE_ROOT=$&#123;basepath&#125;/..</span><br><span class="line">source "$&#123;KUBE_ROOT&#125;/hack/lib/version.sh"</span><br><span class="line">KUBE_GO_PACKAGE="k8s.io"</span><br><span class="line">ldflags=$(kube::version::ldflags)</span><br><span class="line">echo ldflags:$&#123;ldflags&#125;</span><br><span class="line">go install -i -v -gcflags='-N -l' -ldflags="$&#123;ldflags&#125;"</span><br></pre></td></tr></table></figure>
+<p><a href="http://xn--k8s-zr0f.io/kubernetes/hack%E7%9B%AE%E5%BD%95%E6%B7%BB%E5%8A%A0%E5%88%B0path%EF%BC%8C%E7%84%B6%E5%90%8E%E5%9C%A8%E5%8D%95%E4%B8%AA%E7%BB%84%E4%BB%B6%E7%9B%AE%E5%BD%95%E4%B8%8B%E5%B0%B1%E5%8F%AF%E4%BB%A5%E7%9B%B4%E6%8E%A5%E6%89%A7%E8%A1%8C%EF%BC%9A" target="_blank" rel="noopener">将k8s.io/kubernetes/hack目录添加到path，然后在单个组件目录下就可以直接执行：</a></p>
+   <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">goinstall</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2019/11/19/020-kubernetes-version/" title="kubernetes版本号是怎么生成的">http://zhongpan.tech/2019/11/19/020-kubernetes-version/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/k8s/" rel="tag"><i class="fa fa-tag"></i> k8s</a>
+            
+              <a href="/tags/version/" rel="tag"><i class="fa fa-tag"></i> version</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/11/12/019-access-pod-forbidden/" rel="next" title="深入理解kubelet认证和授权">
+                  <i class="fa fa-chevron-left"></i> 深入理解kubelet认证和授权
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/11/28/021-ingress-k8s-dashboard-with-traefik/" rel="prev" title="使用traefik反向代理k8s dashboard">
+                  使用traefik反向代理k8s dashboard <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#有哪些版本号"><span class="nav-number">1.</span> <span class="nav-text">有哪些版本号</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#版本号的含义"><span class="nav-number">2.</span> <span class="nav-text">版本号的含义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#版本号如何生成"><span class="nav-number">3.</span> <span class="nav-text">版本号如何生成</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#go-build时植入版本号"><span class="nav-number">4.</span> <span class="nav-text">go build时植入版本号</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

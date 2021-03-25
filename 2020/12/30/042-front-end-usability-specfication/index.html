@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="从今年7月份开始，因为公司需要，亟需解决产品易用性痛点问题，我开始前端易用性改进工作，我总结了易用性的6个方面，梳理出24个改进点，在随后的版本中逐步落地，目前大部分改进点都得到落实，产品的易用性得到极大的改观，几个月的辛勤付出终有成果，心中甚是欣慰。与此同时，我也负责前端的设计开发以及前端负责人工作，还好自己的基本功扎实😊，虽然一直从事后端研发，极短的时间内，我已经可以娴熟的进行前端开发和解决">
+<meta name="keywords" content="react,frontend">
+<meta property="og:type" content="article">
+<meta property="og:title" content="年终总结-前端易用性规范">
+<meta property="og:url" content="http://zhongpan.tech/2020/12/30/042-front-end-usability-specfication/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="从今年7月份开始，因为公司需要，亟需解决产品易用性痛点问题，我开始前端易用性改进工作，我总结了易用性的6个方面，梳理出24个改进点，在随后的版本中逐步落地，目前大部分改进点都得到落实，产品的易用性得到极大的改观，几个月的辛勤付出终有成果，心中甚是欣慰。与此同时，我也负责前端的设计开发以及前端负责人工作，还好自己的基本功扎实😊，虽然一直从事后端研发，极短的时间内，我已经可以娴熟的进行前端开发和解决">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://vipkshttp0.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0c1000c2-4c8b-4f68-8faf-57aa1f1f9151/index_files/4d880191-42a1-45ee-99ed-8520f18f8112.jpg">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.475Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="年终总结-前端易用性规范">
+<meta name="twitter:description" content="从今年7月份开始，因为公司需要，亟需解决产品易用性痛点问题，我开始前端易用性改进工作，我总结了易用性的6个方面，梳理出24个改进点，在随后的版本中逐步落地，目前大部分改进点都得到落实，产品的易用性得到极大的改观，几个月的辛勤付出终有成果，心中甚是欣慰。与此同时，我也负责前端的设计开发以及前端负责人工作，还好自己的基本功扎实😊，虽然一直从事后端研发，极短的时间内，我已经可以娴熟的进行前端开发和解决">
+<meta name="twitter:image" content="http://vipkshttp0.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0c1000c2-4c8b-4f68-8faf-57aa1f1f9151/index_files/4d880191-42a1-45ee-99ed-8520f18f8112.jpg">
+  <link rel="canonical" href="http://zhongpan.tech/2020/12/30/042-front-end-usability-specfication/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>年终总结-前端易用性规范 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2020/12/30/042-front-end-usability-specfication/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">年终总结-前端易用性规范
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-12-30 13:42:10" itemprop="dateCreated datePublished" datetime="2020-12-30T13:42:10+08:00">2020-12-30</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/design/" itemprop="url" rel="index"><span itemprop="name">design</span></a></span>
+
+                
+                
+                  ，
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/design/frontend/" itemprop="url" rel="index"><span itemprop="name">frontend</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>从今年7月份开始，因为公司需要，亟需解决产品易用性痛点问题，我开始前端易用性改进工作，我总结了易用性的6个方面，梳理出24个改进点，在随后的版本中逐步落地，目前大部分改进点都得到落实，产品的易用性得到极大的改观，几个月的辛勤付出终有成果，心中甚是欣慰。与此同时，我也负责前端的设计开发以及前端负责人工作，还好自己的基本功扎实😊，虽然一直从事后端研发，极短的时间内，我已经可以娴熟的进行前端开发和解决各种疑难问题，而团队管理更是我擅长的，团队有成员对我说，你要是早点来就好了，我就可以学到更多东西，这真是对我最大的褒奖。短短几个月的时间，我已经把前端的代码翻了一遍，说实在，以前代码的规范性非常差，组件复用性更差，完全没有复用的思想，整个团队要提升的地方实在太多了。在开发过程中，我发现很多问题经常重复出现，例如残留数据的问题，一方面是状态管理使用不当，全部都是用的全局状态，另一方面是没有重置状态的意识。因此我将近几个月的经验总结成一份规范，不仅能够提升易用性而且可以避免很多前端Bug，也算是一份年终总结，希望对大家有所启发和帮助。</p>
+<a id="more"></a>
+<h2 id="一-前言">一.前言</h2>
+<p>一个易用的界面会给人带来舒适的体验，同时也能够吸引用户，拉近用户与产品之间的距离，从而创造市场价值。易用性包含如下6个方面：</p>
+<p><img src="http://vipkshttp0.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/0c1000c2-4c8b-4f68-8faf-57aa1f1f9151/index_files/4d880191-42a1-45ee-99ed-8520f18f8112.jpg" alt="img"></p>
+<ul>
+<li>可操作性：用户在这个界面中有很强控制力；</li>
+<li>错误处理：用户很少会造成错误，他们从错误中走出很快；</li>
+<li>效率：用户完成一个任务很快；</li>
+<li>吸引力：这个界面很吸引人，让用户享受使用的过程；</li>
+<li>可理解性：用户很容易理解他所看到的，对于一个新用户来说，学习如何在界面中操作很简单；</li>
+<li>规范性：界面依从规范、标准。</li>
+</ul>
+<p>本规范围绕上述目标，从两个方面规范和指导设计开发过程，从而保证产品的易用性，第一方面是组件规范，主要解决吸引力和规范性问题，使得产品具有美观和一致的界面风格；第二方面是设计规范，主要解决可操作性、错误处理、效率、可理解性和规范性方面的问题，总结了最佳的交互设计实践，提升易用性的同时也能够避免很多前端Bug。</p>
+<p>本规范主要面向UCD设计师和前端开发工程师，在进行原型设计和前端设计开发时需要严格遵循本规范。</p>
+<h2 id="二-组件规范">二.组件规范</h2>
+<p>每一个产品有自己的界面风格，这种风格主要体现在组件的视觉表现上，是一种产品显著区别于另一个产品的主要因素。当一种风格确定下来之后，需要通过组件规范形成统一的约束，使得产品风格能够保持一致。</p>
+<p>组件规范以平面设计稿的方式呈现，详见[SVN](<a href="https://cloudsvn.fiberhome.com/develop_team/04" target="_blank" rel="noopener">https://cloudsvn.fiberhome.com/develop_team/04</a> Portal组/08\ 质量提升/前端设计规范/组件规范/FitOS_新规范.zip)，主要涵盖如下几个方面：</p>
+<h3 id="1-布局和导航">1.布局和导航</h3>
+<ul>
+<li>
+<p>页面结构</p>
+</li>
+<li>
+<p>菜单</p>
+<ol>
+<li>主菜单最多二级，位置侧边栏或顶部，一级菜单有图标</li>
+<li>面包屑，菜单帮助</li>
+</ol>
+</li>
+<li>
+<p>页面</p>
+<ol>
+<li>三级页签导航（可选）</li>
+<li>列表页或概览页</li>
+<li>详情页（可选）</li>
+</ol>
+</li>
+<li>
+<p>全局header</p>
+</li>
+</ul>
+<h3 id="2-图标">2.图标</h3>
+<ul>
+<li>格式：svg，线框风格，单色（随主题色变化）</li>
+<li>大小：</li>
+<li>交互效果：hover，选中</li>
+</ul>
+<h3 id="3-颜色">3.颜色</h3>
+<ul>
+<li>主题色</li>
+<li>辅助色</li>
+<li>中性色</li>
+<li>功能色</li>
+<li>特殊色</li>
+</ul>
+<h3 id="4-字体字号">4.字体字号</h3>
+<ul>
+<li>字体</li>
+<li>字号</li>
+<li>加粗</li>
+<li>行高</li>
+</ul>
+<h3 id="5-组件">5.组件</h3>
+<ul>
+<li>表格</li>
+<li>按钮</li>
+<li>页签</li>
+<li>对话框</li>
+<li>向导</li>
+<li>表单</li>
+</ul>
+<h2 id="三-设计规范">三.设计规范</h2>
+<p>设计规范主要从交互设计和开发实现的角度，总结最佳设计实践，提升用户的使用体验。设计规范分强制和建议级别，强制级别必须遵守，包括已有功能和新功能，建议级别可自行决定是否采用，但是一旦采用则必须所有功能保持一致。</p>
+<h3 id="1-路由">1.路由</h3>
+<ol>
+<li>
+<p>【强制】二级菜单，三级页签，详情页均有独立的URL，URL不能携带query参数。</p>
+</li>
+<li>
+<p>【强制】详情页通过URL直接访问，不能从列表获取任何数据。</p>
+</li>
+<li>
+<p>【强制】详情页的URL一般格式是：{列表页URL}/{id}，存在一些特殊情况，如有一些没有存库的资源，底层openstack详情接口需要同时传id和name，这时详情页的URL格式为：{列表页URL}/{id}/{name}，如遇其他特殊情况需要更新规范，列举在此。</p>
+</li>
+<li>
+<p>【强制】凡是有详情页的，操作日志中需要能够支持跳转，删除操作除外，其他页面是否做跳转的原则：</p>
+<ul>
+<li>跳转确实对用户有帮助，能够通过跳转后的详情页查看有用的信息。</li>
+<li>如果某种资源做过跳转，那么所有页面保持一致，例如私网的VPC做了跳转，那么其他页面的VPC也都做跳转。</li>
+<li>跳转通过名字跳转，没有名字则使用id。</li>
+</ul>
+</li>
+<li>
+<p>【强制】点击一级菜单，展开二级菜单；点击二级菜单，显示对应列表页或者自动切换到三级页签的第一个页签；三级页签切换页签，展示相应列表页，URL也随之切换。</p>
+</li>
+<li>
+<p>【强制】进入二级菜单后，二级菜单保持高亮。</p>
+</li>
+<li>
+<p>【强制】列表页通过名字列链接跳转到详情页，没有名字则通过id列，如果列表已经包含了详情的所有信息，则可以不实现详情页。</p>
+</li>
+<li>
+<p>【建议】详情页可以通过面包屑进行切换，不需要返回列表页再切换。</p>
+</li>
+</ol>
+<h3 id="2-操控">2.操控</h3>
+<ol>
+<li>【建议】列表页和详情页都可以发起操作。</li>
+<li>【建议】表格提供批量操作入口。</li>
+<li>【强制】点击等事件不要进行传播，例如点击tooltip，不要传播到tooltip后面的组件。</li>
+<li>【强制】操作流程中不能出现跳转到其他页面而中断当前流程，应该采用弹出对话框方式，保证当前操作流程能够继续。</li>
+<li>【强制】全局header固定在顶部，滚动时总是固定在顶部。</li>
+<li>【强制】需要控制tooltip显示的位置，不要遮盖按钮等用户交互元素。</li>
+<li>【建议】当更多操作超过10个时，需对操作进行分组并横向排列，每列最多显示10个操作。</li>
+<li>【建议】列表行操作，当操作小于等于4个时，全部固定显示，超过4个时，固定编辑，删除，其他放入更多。</li>
+<li>【强制】不支持的操作不显示，对于固定显示的操作则置灰。</li>
+<li>【建议】能够一页完成的就不要使用向导分多步完成。</li>
+<li>【建议】新建父对象后直接跳转到详情页新建子对象。</li>
+<li>【强制】下拉框当页面滚动时不能和选择器分离，而是虽则选择器滚动而滚动。</li>
+<li>【建议】umi的loading是接口粒度，列表某行的操作未返回会阻塞其他行操作，此时需要自己实现行粒度的loading。</li>
+<li>【强制】对话框完成时，操作失败则对话框不关闭，成功则关闭。</li>
+<li>【强制】列表支持点击行任意位置选中，此时单元格事件优先级更高，如果响应单元格事件，则不再选中行，符合规则3。</li>
+<li>【强制】列表不可选择的行置灰。</li>
+</ol>
+<h3 id="3-输入">3.输入</h3>
+<ol>
+<li>【建议】对于不太重要的字段提供默认值，如子网名称，作用不太大，可使用默认值。</li>
+<li>【强制】对于可枚举数据，不要使用输入框，选项小于等于3项时，使用平铺的单选控件，大于3项时使用下拉选择控件。</li>
+<li>【建议】IP段的输入根据掩码简化地址的输入。</li>
+<li>【建议】IP地址池的输入要将复杂的语法转换为用户的交互输入，语法不直接暴露给用户。</li>
+<li>【强制】下拉选择内容多于10项时提供搜索。</li>
+<li>【强制】搜索输入框提供清除按钮。</li>
+<li>【建议】在适当的地方提供拖拽功能：例如上传文件选择。</li>
+<li>【建议】有明确范围的数值输入使用数字输入组件，输入超过最大值时自动变为最大值，输入小于最小值时自动变为最小值。</li>
+<li>【强制】下拉选择内容显示不完整时需要tooltip。</li>
+</ol>
+<h3 id="4-提示与反馈">4.提示与反馈</h3>
+<ol>
+<li>【强制】所有用户输入，前端需要对长度、范围、格式进行本地校验，校验通过才能下发后台。</li>
+<li>【强制】操作置灰提示方式是右侧放置问号图标，问号图标上tooltip给出提示。</li>
+<li>【强制】按钮置灰提示方式是直接tooltip给出提示。</li>
+<li>【强制】输入控件的提示放在控件下方，不要通过在label旁的问号图标给出提示。</li>
+<li>【强制】输入错误提示通过冒泡方式实时提示。</li>
+<li>【强制】用户触发页面加载时，页面和按钮需要loading效果，定时刷新时不要loading。</li>
+<li>【强制】按钮不能操作时置灰不可用。</li>
+<li>【建议】编辑操作，用户没有改变数据时，不可下发后台。</li>
+<li>【强制】后端请求返回提示使用通知组件，浏览器右侧弹出，成功则停留5秒自动关闭，失败不自动关闭，用户可手动关闭。详情默认收起，如果失败，则自动展开详情。</li>
+<li>【建议】异步操作请求提示不自动关闭，当操作真正完成时后端推送消息给前端，此时在原来的消息提示中给出最终结果，后续同上。</li>
+<li>【强制】全局消息提示使用消息组件，要么嵌入页面中，用户可关闭。要么浏览器上方弹出，停留4秒自动关闭，用户不可手动关闭。最多显示1个全局弹出消息。</li>
+<li>【强制】危险操作给出确认提示，用户确认之后才下发后台。</li>
+<li>【强制】必填字段在label的左侧必须有红色的*。</li>
+<li>【建议】文本输入框要有灰色占位符，提示用户需要输入什么内容。</li>
+<li>【强制】没有数据时，需要有空状态文字和图标提示。</li>
+</ol>
+<h3 id="5-数据管理">5.数据管理</h3>
+<ol>
+<li>【强制】所有页面需要提供手工刷新，有状态变化的页面需要支持自动刷新。</li>
+<li>【强制】使用定时器时需要非常小心，避免出现僵尸定时器，这通常是由于打开定时器和清除定时器没有配对，重复打开了定时器，这样前一个定时器就永远关闭不了，好的习惯是在打开定时器之前总是先清除一下。</li>
+<li>【强制】对话框关闭或完成后，需要清除上一次数据，避免再次打开对话框出现数据残留，特别的antd form的数据需要resetFields或setFieldsValue清除。清除数据前先隐藏对话框，避免对话框出现闪变。</li>
+<li>【强制】离开页面（包括通过浏览器回退），需要清除页面状态，避免再次回到页面出现残留，如对话框自动出现。</li>
+<li>【强制】只有状态需要在多个组件共享时才放到redux中，否则状态保存在组件中。这样可以避免切换页面后会先显示上次的数据问题，也可以避免一些数据残留问题。</li>
+<li>【强制】向导页面中已填数据，在上下步切换时需要保留。</li>
+<li>【建议】必须进行数据选择的选择列表，只有一项数据时，默认选中。</li>
+<li>【强制】字段为null时显示–，空字符串还是显示实际值。</li>
+<li>【强制】避免字段出现重叠或超出边框，要让字段自动换行或省略显示。</li>
+<li>【强制】字段过长时省略显示，备注最长32，其他最长16，超过长度则截取最大长度后追加…显示，中文一个字长度按1算。</li>
+<li>【强制】列表数据过多时需要使用分页，支持分页、跳页、设定每页条数。</li>
+<li>【强制】表格支持宽度随屏幕自适应，不出现横向滚动条。但是缩放宽度过小，无法显示所有列时，需要横向滚动条。</li>
+<li>【建议】对话框支持拖动和最大化。</li>
+<li>【建议】不常用选填内容放入[高级选项]，默认收起。</li>
+<li>【强制】列表中枚举字段需要支持过滤（依赖openstack底层过滤需要视底层是否支持而定，如底层不支持则无法实现过滤）。</li>
+<li>【强制】列表中名称，时间字段需要支持排序，其他字段视需求而定（同样依赖底层的视底层能力而定）。</li>
+<li>【强制】所有资源都需要创建和更新时间字段。</li>
+<li>【强制】列表字段支持自定义显示的列，某些列可固定显示，不允许隐藏。</li>
+<li>【强制】列表支持字段模糊检索（同样依赖底层的视底层能力而定）。</li>
+<li>【建议】复杂的列表需要支持组合条件检索，并能够保存查询条件，以便重复使用。</li>
+<li>【建议】列表支持字段为空的检索。</li>
+</ol>
+<h3 id="6-一致性">6.一致性</h3>
+<ol>
+<li>【强制】中文环境，标点统一用中文标点。</li>
+<li>【强制】中文环境，除了常用的英文缩写，如CPU，英文都应该翻译为中文。</li>
+<li>【强制】错误提示统一不加感叹号。</li>
+<li>【强制】专业术语在不同地方保持一致性。</li>
+<li>【强制】所有页面符合组件规范。</li>
+<li>【强制】所有页面需要适配各种主题，在各主题下显示正常，包括亮色，暗色和暗黑主题。</li>
+</ol>
+<h3 id="7-兼容性">7.兼容性</h3>
+<ol>
+<li>【强制】浏览器至少支持chrome 85及以上和firefox 79及以上。</li>
+<li>【强制】最小分辨率1366*768，保证此分辨率及以上的显示正常。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2020/12/30/042-front-end-usability-specfication/" title="年终总结-前端易用性规范">http://zhongpan.tech/2020/12/30/042-front-end-usability-specfication/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/react/" rel="tag"><i class="fa fa-tag"></i> react</a>
+            
+              <a href="/tags/frontend/" rel="tag"><i class="fa fa-tag"></i> frontend</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/11/12/041-the-trap-of-js-timer/" rel="next" title="js定时器的陷阱">
+                  <i class="fa fa-chevron-left"></i> js定时器的陷阱
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#一-前言"><span class="nav-number">1.</span> <span class="nav-text">一.前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二-组件规范"><span class="nav-number">2.</span> <span class="nav-text">二.组件规范</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-布局和导航"><span class="nav-number">2.1.</span> <span class="nav-text">1.布局和导航</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-图标"><span class="nav-number">2.2.</span> <span class="nav-text">2.图标</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-颜色"><span class="nav-number">2.3.</span> <span class="nav-text">3.颜色</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-字体字号"><span class="nav-number">2.4.</span> <span class="nav-text">4.字体字号</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-组件"><span class="nav-number">2.5.</span> <span class="nav-text">5.组件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#三-设计规范"><span class="nav-number">3.</span> <span class="nav-text">三.设计规范</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-路由"><span class="nav-number">3.1.</span> <span class="nav-text">1.路由</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-操控"><span class="nav-number">3.2.</span> <span class="nav-text">2.操控</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-输入"><span class="nav-number">3.3.</span> <span class="nav-text">3.输入</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-提示与反馈"><span class="nav-number">3.4.</span> <span class="nav-text">4.提示与反馈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-数据管理"><span class="nav-number">3.5.</span> <span class="nav-text">5.数据管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-一致性"><span class="nav-number">3.6.</span> <span class="nav-text">6.一致性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-兼容性"><span class="nav-number">3.7.</span> <span class="nav-text">7.兼容性</span></a></li></ol></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

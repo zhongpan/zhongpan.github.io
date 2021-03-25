@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="centos7.6从yum源二进制安装了k8s集群，建立NodePort类型service后无法从集群外访问service，本文记录了问题解决过程。">
+<meta name="keywords" content="k8s">
+<meta property="og:type" content="article">
+<meta property="og:title" content="解决k8s集群外无法访问NodePort问题">
+<meta property="og:url" content="http://zhongpan.tech/2019/08/06/011-nodeport-cannot-be-accessed-outside-the-k8s-cluster/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="centos7.6从yum源二进制安装了k8s集群，建立NodePort类型service后无法从集群外访问service，本文记录了问题解决过程。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.459Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="解决k8s集群外无法访问NodePort问题">
+<meta name="twitter:description" content="centos7.6从yum源二进制安装了k8s集群，建立NodePort类型service后无法从集群外访问service，本文记录了问题解决过程。">
+  <link rel="canonical" href="http://zhongpan.tech/2019/08/06/011-nodeport-cannot-be-accessed-outside-the-k8s-cluster/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>解决k8s集群外无法访问NodePort问题 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2019/08/06/011-nodeport-cannot-be-accessed-outside-the-k8s-cluster/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">解决k8s集群外无法访问NodePort问题
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-08-06 16:18:51" itemprop="dateCreated datePublished" datetime="2019-08-06T16:18:51+08:00">2019-08-06</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>centos7.6从yum源二进制安装了k8s集群，建立NodePort类型service后无法从集群外访问service，本文记录了问题解决过程。</p>
+<a id="more"></a>
+<h2 id="环境">环境</h2>
+<p>centos7.6</p>
+<p>k8s v1.5.2</p>
+<p>dashbaord 1.6.0</p>
+<p>master：10.10.10.14</p>
+<p>node1：10.10.10.15</p>
+<p>node2：10.10.10.16</p>
+<p>集群外机器：10.10.10.1</p>
+<h2 id="问题分析">问题分析</h2>
+<blockquote>
+<p>[vagrant@localhost ~]$ kubectl get pod -n kube-system -o wide<br>
+NAME                                    READY     STATUS    RESTARTS   AGE       IP            NODE<br>
+kubernetes-dashboard-1801235744-v6r9t   1/1       Running   2          3d        172.16.91.2   node2</p>
+<p>[vagrant@localhost ~]$ kubectl get svc -n kube-system<br>
+NAME                   CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE<br>
+kubernetes-dashboard   10.254.106.243   <nodes>       80:30389/TCP   3d</nodes></p>
+</blockquote>
+<p>我遇到的问题是通过https://10.10.10.16:30389从集群外机器(10.10.10.1)无法访问dashboard，其他service情况是一样的，在集群内部或者通过clusterip是可以访问的，排除集群本生问题。k8s的service是通过iptables实现的，初步怀疑和iptables有关。</p>
+<h2 id="问题定位">问题定位</h2>
+<p>这里通过增加trace日志的方法来跟踪数据包在iptables中哪一步处理出现问题的。在node2上执行如下命令，对tcp协议并且目的端口为30389的数据包从PREROUTING链增加TRACE日志，日志会输出到/var/log/messages。</p>
+<blockquote>
+<p>[vagrant@localhost ~]$ sudo iptables -t raw -A PREROUTING -p tcp --dport 30389 -j TRACE</p>
+</blockquote>
+<p>详细分析日志信息，发现到FORWARD链的filter表就没有后续包了。</p>
+<blockquote>
+<p>[vagrant@localhost ~]$sudo cat /var/log/messages</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: raw:PREROUTING:policy:2 IN=eth1 OUT= MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=10.10.10.16 LEN=52 TOS=0x00 PREC=0x00 TTL=128 ID=43914 DF PROTO=TCP SPT=58026 DPT=30389 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402)</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: nat:PREROUTING:rule:1 IN=eth1 OUT= MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=10.10.10.16 LEN=52 TOS=0x00 PREC=0x00 TTL=128 ID=43914 DF PROTO=TCP SPT=58026 DPT=30389 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402)</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: nat:KUBE-SERVICES:rule:4 IN=eth1 OUT= MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=10.10.10.16 LEN=52 TOS=0x00 PREC=0x00 TTL=128 ID=43914 DF PROTO=TCP SPT=58026 DPT=30389 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402)</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: nat:KUBE-NODEPORTS:rule:3 IN=eth1 OUT= MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=10.10.10.16 LEN=52 TOS=0x00 PREC=0x00 TTL=128 ID=43914 DF PROTO=TCP SPT=58026 DPT=30389 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402)</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: nat:KUBE-MARK-MASQ:rule:1 IN=eth1 OUT= MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=10.10.10.16 LEN=52 TOS=0x00 PREC=0x00 TTL=128 ID=43914 DF PROTO=TCP SPT=58026 DPT=30389 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402)</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: nat:KUBE-MARK-MASQ:return:2 IN=eth1 OUT= MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=10.10.10.16 LEN=52 TOS=0x00 PREC=0x00 TTL=128 ID=43914 DF PROTO=TCP SPT=58026 DPT=30389 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402) MARK=0x4000</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: nat:KUBE-NODEPORTS:rule:4 IN=eth1 OUT= MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=10.10.10.16 LEN=52 TOS=0x00 PREC=0x00 TTL=128 ID=43914 DF PROTO=TCP SPT=58026 DPT=30389 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402) MARK=0x4000</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: nat:KUBE-SVC-XGLOHA7QRQ3V22RZ:rule:1 IN=eth1 OUT= MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=10.10.10.16 LEN=52 TOS=0x00 PREC=0x00 TTL=128 ID=43914 DF PROTO=TCP SPT=58026 DPT=30389 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402) MARK=0x4000</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: nat:KUBE-SEP-7MDAIXCESNWFCQ4R:rule:2 IN=eth1 OUT= MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=10.10.10.16 LEN=52 TOS=0x00 PREC=0x00 TTL=128 ID=43914 DF PROTO=TCP SPT=58026 DPT=30389 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402) MARK=0x4000</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: filter:FORWARD:rule:1 IN=eth1 OUT=docker0 MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=172.16.91.2 LEN=52 TOS=0x00 PREC=0x00 TTL=127 ID=43914 DF PROTO=TCP SPT=58026 DPT=9090 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402) MARK=0x4000</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: filter:DOCKER-ISOLATION:return:1 IN=eth1 OUT=docker0 MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=172.16.91.2 LEN=52 TOS=0x00 PREC=0x00 TTL=127 ID=43914 DF PROTO=TCP SPT=58026 DPT=9090 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402) MARK=0x4000</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: filter:FORWARD:rule:2 IN=eth1 OUT=docker0 MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=172.16.91.2 LEN=52 TOS=0x00 PREC=0x00 TTL=127 ID=43914 DF PROTO=TCP SPT=58026 DPT=9090 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402) MARK=0x4000</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: filter:DOCKER:return:1 IN=eth1 OUT=docker0 MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=172.16.91.2 LEN=52 TOS=0x00 PREC=0x00 TTL=127 ID=43914 DF PROTO=TCP SPT=58026 DPT=9090 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402) MARK=0x4000</p>
+<p>Sep 10 07:24:50 localhost kernel: TRACE: filter:FORWARD:policy:6 IN=eth1 OUT=docker0 MAC=08:00:27:43:31:95:0a:00:27:00:00:0c:08:00 SRC=10.10.10.1 DST=172.16.91.2 LEN=52 TOS=0x00 PREC=0x00 TTL=127 ID=43914 DF PROTO=TCP SPT=58026 DPT=9090 SEQ=73790228 ACK=0 WINDOW=64240 RES=0x00 SYN URGP=0 OPT (020405B40103030801010402) MARK=0x400</p>
+</blockquote>
+<p>查看FORWARD链发现其policy是DROP，问题就出在这里。</p>
+<blockquote>
+<p>[vagrant@localhost ~]$ sudo iptables -nL FORWARD<br>
+Chain FORWARD (policy DROP)<br>
+target     prot opt source               destination<br>
+DOCKER-ISOLATION  all  –  0.0.0.0/0            0.0.0.0/0<br>
+DOCKER     all  –  0.0.0.0/0            0.0.0.0/0<br>
+ACCEPT     all  –  0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED<br>
+ACCEPT     all  –  0.0.0.0/0            0.0.0.0/0<br>
+ACCEPT     all  –  0.0.0.0/0            0.0.0.0/0</p>
+</blockquote>
+<h2 id="解决方法">解决方法</h2>
+<p>将FORWARD链改为ACCEPT的。</p>
+<blockquote>
+<p>[vagrant@localhost ~]$ sudo iptables -P FORWARD ACCEPT</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2019/08/06/011-nodeport-cannot-be-accessed-outside-the-k8s-cluster/" title="解决k8s集群外无法访问NodePort问题">http://zhongpan.tech/2019/08/06/011-nodeport-cannot-be-accessed-outside-the-k8s-cluster/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/k8s/" rel="tag"><i class="fa fa-tag"></i> k8s</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/07/04/010-cpp-logging-framework-benchmark/" rel="next" title="C++日志框架基准测试及源码分析">
+                  <i class="fa fa-chevron-left"></i> C++日志框架基准测试及源码分析
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/08/09/012-using-openssh-to-build-ssh-server-upder-windows/" rel="prev" title="Windows下使用OpenSSH搭建ssh服务端">
+                  Windows下使用OpenSSH搭建ssh服务端 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#环境"><span class="nav-number">1.</span> <span class="nav-text">环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题分析"><span class="nav-number">2.</span> <span class="nav-text">问题分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#问题定位"><span class="nav-number">3.</span> <span class="nav-text">问题定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解决方法"><span class="nav-number">4.</span> <span class="nav-text">解决方法</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

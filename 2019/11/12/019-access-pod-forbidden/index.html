@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="在通过kubectl访问pod信息，例如执行kubectl logs，常常会遇到类似如下错误：  Error from server (Forbidden): Forbidden (user=system:anonymous, verb=get, resource=nodes, subresource=proxy) ( pods/log tiller-deploy-6b5ffb6f-lg9jb)">
+<meta name="keywords" content="k8s,kubelet">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解kubelet认证和授权">
+<meta property="og:url" content="http://zhongpan.tech/2019/11/12/019-access-pod-forbidden/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="在通过kubectl访问pod信息，例如执行kubectl logs，常常会遇到类似如下错误：  Error from server (Forbidden): Forbidden (user=system:anonymous, verb=get, resource=nodes, subresource=proxy) ( pods/log tiller-deploy-6b5ffb6f-lg9jb)">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.463Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入理解kubelet认证和授权">
+<meta name="twitter:description" content="在通过kubectl访问pod信息，例如执行kubectl logs，常常会遇到类似如下错误：  Error from server (Forbidden): Forbidden (user=system:anonymous, verb=get, resource=nodes, subresource=proxy) ( pods/log tiller-deploy-6b5ffb6f-lg9jb)">
+  <link rel="canonical" href="http://zhongpan.tech/2019/11/12/019-access-pod-forbidden/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>深入理解kubelet认证和授权 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2019/11/12/019-access-pod-forbidden/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">深入理解kubelet认证和授权
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-11-12 09:25:59" itemprop="dateCreated datePublished" datetime="2019-11-12T09:25:59+08:00">2019-11-12</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在通过kubectl访问pod信息，例如执行kubectl logs，常常会遇到类似如下错误：</p>
+<blockquote>
+<p>Error from server (Forbidden): Forbidden (user=system:anonymous, verb=get, resource=nodes, subresource=proxy) ( pods/log tiller-deploy-6b5ffb6f-lg9jb)</p>
+</blockquote>
+<p>网上搜索可以通过启用anonymous访问，也就是使用–anonymous-auth=true或者配置文件添加：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">authentication:</span></span><br><span class="line"><span class="attr">    anonymous:</span></span><br><span class="line"><span class="attr">        enabled:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>但是设置之后错误依旧，为此我探究了一下kubelet的认证机制，终于将问题解决，其实很简单，答案后面揭晓。</p>
+<p>我们知道kubectl只会和apiserver交互，对于kubectl logs、kubectl exec等需要访问pod的这些命令，实际上是apiserver调用kubelet接口完成的，上述错误正是出在这个过程，而不是kubectl到apiserver的过程。</p>
+<p>kubelet通过port指定的端口（默认10250）对外暴露服务，这个服务是需要TLS认证的，同时也可以通过 readOnlyPort 端口（默认10255，0表示关闭）对外暴露只读服务，这个服务是不需要认证的。apiserver通过–kubelet-https参数指定调用哪个服务，true为前者，false为后者，此时只能执行只读操作。下面主要说一下前者。</p>
+<a id="more"></a>
+<h2 id="认证过程">认证过程</h2>
+<h3 id="配置认证方式">配置认证方式</h3>
+<p>有三种可配置认证方式：</p>
+<ol>
+<li>
+<p>TLS认证，这也是默认的</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">authentication:</span></span><br><span class="line"><span class="attr">    anonymous:</span></span><br><span class="line"><span class="attr">        enabled:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">    webhook:</span></span><br><span class="line">    	<span class="attr">enabled:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">    x509:</span></span><br><span class="line">    	<span class="attr">clientCAFile:</span> <span class="string">xxxx</span></span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>允许anonymous，这时可不配置客户端证书</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">authentication:</span></span><br><span class="line"><span class="attr">    anonymous:</span></span><br><span class="line"><span class="attr">        enabled:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>webhook，这时可不配置客户端证书</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">authentication:</span></span><br><span class="line"><span class="attr">    webhook:</span></span><br><span class="line">    	<span class="attr">enabled:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>这时kubelet通过bearer tokens，找apiserver认证，如果存在对应的serviceaccount，则认证通过。</p>
+</li>
+</ol>
+<p>如果2开启，则忽略x509和webhook认证；否则，如果1和3同时开启，则按1、3的顺序依次认证，任何一个认证通过则返回通过，否则认证不通过。</p>
+<p>通过kubectl命令行访问kubelet时，无法传递bearer tokens，所以无法使用webhook认证，这时只能使用x509认证。</p>
+<h3 id="证书配置">证书配置</h3>
+<p>kubelet对外暴露https服务，必须设置服务端证书，如果通过x509证书认证客户端，那么还需要配置客户端证书。下面说明证书配置的三种方法：</p>
+<h4 id="手工指定证书">手工指定证书</h4>
+<ol>
+<li>
+<p>假设ca的证书和key：ca.pem，ca-key.pem</p>
+</li>
+<li>
+<p>用上述ca生成kubelet服务端证书和key：kubelet-server.pem、kubelet-server-key.pem</p>
+</li>
+<li>
+<p>用上述ca生成apiserver使用的客户端证书和key：kubelet-client.pem、kubelet-client-key.pem，证书CN为kubelet-client</p>
+</li>
+<li>
+<p>修改kubelet的配置文件：</p>
+ <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">tlsCertFile:</span> <span class="string">kubelet-server.pem</span></span><br><span class="line"><span class="attr">tlsPrivateKeyFile:</span> <span class="string">kubelet-server-key.pem</span></span><br><span class="line"><span class="attr">authentication:</span></span><br><span class="line"><span class="attr">    x509:</span></span><br><span class="line"><span class="attr">        clientCAFile:</span> <span class="string">ca.pem</span></span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>修改apiserver参数：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--kubelet-certificate-authority=ca.pem --kubelet-client-certificate=kubelet-client.pem --kubelet-client-key=kubelet-client-key.pem</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>授权kubelet-client用户：</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create clusterrolebinding kubelet-admin --clusterrole=system:kubelet-api-admin --user=kubelet-client</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<pre><code>经过上面5步，认证的过程实际已经OK了，第6步是为授权过程服务的，kubelet的授权是通过webhook委托给apiserver的。
+</code></pre>
+<h4 id="自签名证书和key">自签名证书和key</h4>
+<p>实际上是上述过程的特化，不指定tlsCertFile和tlsPrivateKeyFile时，kubelet会自动生成服务端证书保存在–cert-dir指定目录中，文件名为kubelet.crt和kubelet.key，这个证书是自签名的，所以apiserver不需要指定–kubelet-certificate-authority，其他配置是一样的。</p>
+<h4 id="通过tls-bootstrap机制">通过TLS bootstrap机制</h4>
+<p>还可以通过TLS bootstrap机制分配kubelet服务证书。跟配置分配访问apiserver的客户端证书方法是一样的（参考<a href="https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet-tls-bootstrapping/" target="_blank" rel="noopener">官方文档</a>），额外的配置如下：</p>
+<ol>
+<li>
+<p>修改kubelet配置文件：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">serverTLSBootstrap:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>授权允许创建kubelet服务端证书</p>
+<p>首先创建system:certificates.k8s.io:certificatesigningrequests:selfnodeserver，默认是没有创建的。</p>
+<p>selfnodeserver.yaml文件如下：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># A ClusterRole which instructs the CSR approver to approve a node requesting a</span></span><br><span class="line"><span class="comment"># serving cert matching its client cert.</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ClusterRole</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">rbac.authorization.k8s.io/v1</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line"><span class="attr">  name:</span> <span class="attr">system:certificates.k8s.io:certificatesigningrequests:selfnodeserver</span></span><br><span class="line"><span class="attr">rules:</span></span><br><span class="line"><span class="attr">- apiGroups:</span> <span class="string">["certificates.k8s.io"]</span></span><br><span class="line"><span class="attr">  resources:</span> <span class="string">["certificatesigningrequests/selfnodeserver"]</span></span><br><span class="line"><span class="attr">  verbs:</span> <span class="string">["create"]</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create -f selfnodeserver.yaml</span><br></pre></td></tr></table></figure>
+<p>然后创建绑定：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create clusterrolebinding node-server-auto-renew-crt --clusterrole=system:certificates.k8s.io:certificatesigningrequests:selfnodeserver --group=system:nodes</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>手工批准证书请求：</p>
+<p>先查询证书请求：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[vagrant@localhost etc]$ kubectl get csr</span><br><span class="line">NAME                                                   AGE     REQUESTOR                 CONDITION</span><br><span class="line">csr-2jxvn                                              76s     system:node:10.10.10.16   Pending</span><br></pre></td></tr></table></figure>
+<p>然后批准证书：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl certificate approve csr-2jxvn</span><br></pre></td></tr></table></figure>
+<p>之后在相应kubelet的–cert-dir目录可以看到服务端证书已经生成。</p>
+</li>
+<li>
+<p>配置客户端证书和前面的方法是一样的，上面3步只是生成服务端证书。</p>
+</li>
+</ol>
+<h4 id="选择哪种方式">选择哪种方式</h4>
+<p>客户端证书配置是免不了的，区别是在服务端证书，显然自动生成更加方便，TLS bootstrap相对于自签名证书更加安全，集群统一使用信任的CA签名。</p>
+<p>TLS bootstrap还可以配置证书过期后自动重新生成，方法是修改kubelet配置文件：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">rotateCertificates:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>TLS bootstrap分配证书的有效期可以通过kube-controller-manager如下参数修改，默认8760h0m0s，也就是1年：</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--experimental-cluster-signing-duration</span><br></pre></td></tr></table></figure>
+<h2 id="授权过程">授权过程</h2>
+<h3 id="配置授权方式">配置授权方式</h3>
+<p>可配置两种授权方式：</p>
+<ol>
+<li>
+<p>AlwaysAllow：从字面意思就可知道</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">authorization:</span></span><br><span class="line">	<span class="attr">mode:</span> <span class="string">AlwaysAllow</span></span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>Webhook：这是默认模式</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">authorization:</span></span><br><span class="line">	<span class="attr">mode:</span> <span class="string">Webhook</span></span><br></pre></td></tr></table></figure>
+<p>这时授权过程是委托给apiserver的，使用apiserver一样的授权模式，也就是RBAC。</p>
+</li>
+</ol>
+<h3 id="配置权限">配置权限</h3>
+<p>如果通过Webhook授权，就需要通过RBAC为用户配置权限。</p>
+<p>首先要弄清楚通过认证的用户是什么，通过x509证书认证的用户名是客户端证书中的CN字段，用户组为O字段；通过webhook认证的用户是token对应的serviceaccount；没有通过认证或使能anonymous，则用户为system:anonymous。</p>
+<p>其次要弄清楚应该授权什么权限，系统已经存在一个system:kubelet-api-admin角色，这是最高的权限，可以根据需要创建低权限角色。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[vagrant@localhost kube-apiserver]$ kubectl describe clusterrole system:kubelet-api-admin</span><br><span class="line">Name:         system:kubelet-api-admin</span><br><span class="line">Labels:       kubernetes.io/bootstrapping=rbac-defaults</span><br><span class="line">Annotations:  rbac.authorization.kubernetes.io/autoupdate: true</span><br><span class="line">PolicyRule:</span><br><span class="line">  Resources      Non-Resource URLs  Resource Names  Verbs</span><br><span class="line">  ---------      -----------------  --------------  -----</span><br><span class="line">  nodes/log      []                 []              [*]</span><br><span class="line">  nodes/metrics  []                 []              [*]</span><br><span class="line">  nodes/proxy    []                 []              [*]</span><br><span class="line">  nodes/spec     []                 []              [*]</span><br><span class="line">  nodes/stats    []                 []              [*]</span><br><span class="line">  nodes          []                 []              [get list watch proxy]</span><br></pre></td></tr></table></figure>
+<p>最后将用户和角色绑定，即完成权限的配置。</p>
+<h2 id="总结">总结</h2>
+<p>如何配置kubelet的认证和授权，归结起来常用如下2种做法：</p>
+<ol>
+<li>
+<p>省事型，可用于开发环境</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">authentication:</span></span><br><span class="line"><span class="attr">    anonymous:</span></span><br><span class="line"><span class="attr">        enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">authorization:</span></span><br><span class="line">	<span class="attr">mode:</span> <span class="string">AlwaysAllow</span></span><br></pre></td></tr></table></figure>
+<p>一开始出现的Forbidden问题就是没有配置AlwaysAllow，默认是Webhook。</p>
+</li>
+<li>
+<p>安全型，生产环境使用</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">authentication:</span></span><br><span class="line"><span class="attr">    anonymous:</span></span><br><span class="line"><span class="attr">        enabled:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">authorization:</span></span><br><span class="line">	<span class="attr">mode:</span> <span class="string">Webhook</span></span><br></pre></td></tr></table></figure>
+<p>服务端证书通过TLS bootstrap，客户端证书需要手工配置。</p>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2019/11/12/019-access-pod-forbidden/" title="深入理解kubelet认证和授权">http://zhongpan.tech/2019/11/12/019-access-pod-forbidden/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/k8s/" rel="tag"><i class="fa fa-tag"></i> k8s</a>
+            
+              <a href="/tags/kubelet/" rel="tag"><i class="fa fa-tag"></i> kubelet</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/10/30/018-output-change-kubectl-get-cs/" rel="next" title="什么是kubernetes服务端打印">
+                  <i class="fa fa-chevron-left"></i> 什么是kubernetes服务端打印
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/11/19/020-kubernetes-version/" rel="prev" title="kubernetes版本号是怎么生成的">
+                  kubernetes版本号是怎么生成的 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#认证过程"><span class="nav-number">1.</span> <span class="nav-text">认证过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#配置认证方式"><span class="nav-number">1.1.</span> <span class="nav-text">配置认证方式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#证书配置"><span class="nav-number">1.2.</span> <span class="nav-text">证书配置</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#手工指定证书"><span class="nav-number">1.2.1.</span> <span class="nav-text">手工指定证书</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#自签名证书和key"><span class="nav-number">1.2.2.</span> <span class="nav-text">自签名证书和key</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#通过tls-bootstrap机制"><span class="nav-number">1.2.3.</span> <span class="nav-text">通过TLS bootstrap机制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#选择哪种方式"><span class="nav-number">1.2.4.</span> <span class="nav-text">选择哪种方式</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#授权过程"><span class="nav-number">2.</span> <span class="nav-text">授权过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#配置授权方式"><span class="nav-number">2.1.</span> <span class="nav-text">配置授权方式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#配置权限"><span class="nav-number">2.2.</span> <span class="nav-text">配置权限</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

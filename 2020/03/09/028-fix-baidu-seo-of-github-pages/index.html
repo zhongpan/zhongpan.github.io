@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="因为github屏蔽了baidu的页面抓取，所以baidu一直无法索引自建博客。而在国内毕竟baidu的使用量还是更大，为了让自己的博客有更多人访问，还是需要打通这条通道。查找了一些网上资料，解决办法可以通过使用国内的类似服务coding pages作为镜像。 coding在国内云端开发者服务里有良好的口碑，2019年被鹅厂收购，当时广大码农担心又一个好技术被葬送，现在来看有鹅厂的加持，codin">
+<meta name="keywords" content="hexo,github,github actions">
+<meta property="og:type" content="article">
+<meta property="og:title" content="解决github pages无法被baidu抓取页面问题">
+<meta property="og:url" content="http://zhongpan.tech/2020/03/09/028-fix-baidu-seo-of-github-pages/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="因为github屏蔽了baidu的页面抓取，所以baidu一直无法索引自建博客。而在国内毕竟baidu的使用量还是更大，为了让自己的博客有更多人访问，还是需要打通这条通道。查找了一些网上资料，解决办法可以通过使用国内的类似服务coding pages作为镜像。 coding在国内云端开发者服务里有良好的口碑，2019年被鹅厂收购，当时广大码农担心又一个好技术被葬送，现在来看有鹅厂的加持，codin">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/60758f22-e0fc-42e9-a409-4199ef752287/index_files/92f929cf-0ac0-4cd5-a056-9637ab366a7e.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/60758f22-e0fc-42e9-a409-4199ef752287/index_files/f334e6b3-fc02-4ab1-b2d7-587ea6df7ef5.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/60758f22-e0fc-42e9-a409-4199ef752287/index_files/de3732f9-627f-4893-a679-6242fc15e226.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.471Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="解决github pages无法被baidu抓取页面问题">
+<meta name="twitter:description" content="因为github屏蔽了baidu的页面抓取，所以baidu一直无法索引自建博客。而在国内毕竟baidu的使用量还是更大，为了让自己的博客有更多人访问，还是需要打通这条通道。查找了一些网上资料，解决办法可以通过使用国内的类似服务coding pages作为镜像。 coding在国内云端开发者服务里有良好的口碑，2019年被鹅厂收购，当时广大码农担心又一个好技术被葬送，现在来看有鹅厂的加持，codin">
+<meta name="twitter:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/60758f22-e0fc-42e9-a409-4199ef752287/index_files/92f929cf-0ac0-4cd5-a056-9637ab366a7e.png">
+  <link rel="canonical" href="http://zhongpan.tech/2020/03/09/028-fix-baidu-seo-of-github-pages/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>解决github pages无法被baidu抓取页面问题 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2020/03/09/028-fix-baidu-seo-of-github-pages/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">解决github pages无法被baidu抓取页面问题
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-03-09 17:26:45" itemprop="dateCreated datePublished" datetime="2020-03-09T17:26:45+08:00">2020-03-09</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/blog/" itemprop="url" rel="index"><span itemprop="name">blog</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>因为github屏蔽了baidu的页面抓取，所以baidu一直无法索引自建博客。而在国内毕竟baidu的使用量还是更大，为了让自己的博客有更多人访问，还是需要打通这条通道。查找了一些网上资料，解决办法可以通过使用国内的类似服务coding pages作为镜像。</p>
+<p>coding在国内云端开发者服务里有良好的口碑，2019年被鹅厂收购，当时广大码农担心又一个好技术被葬送，现在来看有鹅厂的加持，coding发展还是不错的，也为广大开发者提供更多实惠。所以如果你正在选择一个建站方式，直接使用coding pages也是个不错的选择。下面说下已经使用github pages时如何解决baidu无法抓取页面问题。</p>
+<a id="more"></a>
+<h2 id="coding-pages">coding pages</h2>
+<p>最近coding进行了一系列产品整合升级操作，所以网上有些教程已经过时，大概梳理下时间线：</p>
+<ul>
+<li>
+<p>coding成立于2014年，提供一站式云端开发体验，有个人版和企业版两个产品；</p>
+</li>
+<li>
+<p>2018 年4月与腾讯云达成战略合作，推出了轻量级代码托管产品 「腾讯云开发者平台」；</p>
+</li>
+<li>
+<p>2019年4月推出全新coding，在将原企业版提权为主打产品，并加入敏捷项目协同、持续集成、制品库、单项目多仓库等新功能及数百项特性改进；</p>
+</li>
+<li>
+<p>2019年8月腾讯完成对coding的全资收购；</p>
+</li>
+<li>
+<p>2019年12月28日起，腾讯云开发者平台停止注册；</p>
+</li>
+<li>
+<p>将coding个人版与腾讯云开发者平台升级至全新coding，2019.12.25~2020.1.20将原有账户全部升级完。</p>
+</li>
+</ul>
+<p><a href="http://xn--codingcoding-lt4smsv10bx4jkdw811bckr346h.net" target="_blank" rel="noopener">自此coding只有一个入口coding.net</a>，免费版本支持5人以内团队、20个项目和50G空间。</p>
+<p>coding pages是coding提供的类似github pages功能，有些教程说要升级腾讯云开发者账户才能使用，现在不需要了，直接coding.net注册即可使用。网上对于coding pages的评价可能还是停留在产品整合升级之前，对其评价并不是太好。目前最新的coding pages，初步使用还算不错，至少比github pages要快很多。</p>
+<p>coding pages有一个不太好的地方是，一开始没有找到入口😂。原来默认没有启用入口，新版coding中把pages归到构建与部署功能中，要到项目设置的功能开关中开启。</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/60758f22-e0fc-42e9-a409-4199ef752287/index_files/92f929cf-0ac0-4cd5-a056-9637ab366a7e.png" alt="image-20200309212754583"></p>
+<p>这样项目导航菜单中才会出现pages入口。</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/60758f22-e0fc-42e9-a409-4199ef752287/index_files/f334e6b3-fc02-4ab1-b2d7-587ea6df7ef5.png" alt="image-20200309213000207"></p>
+<p>之所以归类到构建与部署功能，也是有道理的，coding的pages功能类似一个特殊的部署，它的主要特性是选择从哪个仓库在什么时候手工还是自动部署成网站，然后给你一个域名，这个域名不像github可以定制为形如”<a href="http://xn--eqr924avxo.github.io" target="_blank" rel="noopener">用户名.github.io</a>“这样的，而是自动分配的形如&quot;<a href="http://00kj2k.coding-pages.com" target="_blank" rel="noopener">00kj2k.coding-pages.com</a>&quot;这种的域名。coding pages也没有提供建站模板等功能。</p>
+<p>熟悉以上这些后，你应该可以很容易建立自己的coding pages了。注意coding pages并不认仓库中的CNAME文件，需要在界面中配置域名。</p>
+<h2 id="镜像方法">镜像方法</h2>
+<p>接下来就是解决如何将coding pages作为github pages的镜像了，有两种方案：</p>
+<p>方案一：本地hexo d时同时部署到coding pages</p>
+<p>方案二：通过github持续集成自动同步到coding pages。而持续集成也有很多选择，可以选择github自家的github actions，也可以选择第三方的，如travis-ci。</p>
+<p>推荐方案二，并且推荐使用github actions。这里顺便把hexo d也做成自动的，我之前都是每次自己hexo g然后hexo d，现在用上github actions，实在是省心了不少。</p>
+<h3 id="github-actions">github actions</h3>
+<p>github actions是githut自家的持续集成，它的最大的特色是可以复用别人写好的action，这些action也在github的仓库里，github还专门弄了一个市场，供大家选用。</p>
+<p>毫不意外的，它里面已经有hexo的部署action，以及仓库的同步action，直接拿来就可以了。</p>
+<h3 id="仓库访问凭证准备">仓库访问凭证准备</h3>
+<p>我是这样规划仓库的：hexo源文件一个github仓库，github pages一个仓库，coding pages一个仓库</p>
+<p>github actions是建在hexo源文件仓库上，执行时先进行hexo部署，推送到github pages仓库（也就是相当于执行hexo d），然后将github pages仓库同步到coding pages仓库。</p>
+<h4 id="github-pages-deploykey">github pages deploykey</h4>
+<p>deploykey和全局设置里的ssh key类似，区别是针对单个仓库的。</p>
+<p>生成密钥对，如下命令生成myssh和myssh.pub文件：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh-keygen -t rsa -b 4096 -C &quot;zhongpan2000@gmail.com&quot; -f D:\myssh</span><br></pre></td></tr></table></figure>
+<p>将myssh.pub的内容设置到github pages仓库的deploykey中。</p>
+<p>将myssh的内容设置到hexo源文件仓库的secrets中，名为github_pages_deploykey，后续在action使用。</p>
+<h4 id="coding-pages-token">coding pages token</h4>
+<p>coding没有提供仓库级别的ssh key，只能使用token。在项目设置的开发者选项中创建并配置权限，创建后得到用户名和密码两个字符串，通过https://user:password@your.repo.url就可以操作仓库。</p>
+<p>将上述&quot;user:password&quot;也存储到hexo源文件仓库的secrets中，名为coding_blog_user_token，后续在action使用。</p>
+<h3 id="完整workflow">完整workflow</h3>
+<p>最后给出完整的git actions脚本。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">name:</span> <span class="string">Hexo</span> <span class="string">Build</span> <span class="string">and</span> <span class="string">Deploy</span></span><br><span class="line"></span><br><span class="line"><span class="attr">on:</span> <span class="string">[push]</span></span><br><span class="line"></span><br><span class="line"><span class="attr">jobs:</span></span><br><span class="line"><span class="attr">  hexo-build-deploy:</span></span><br><span class="line"><span class="attr">    runs-on:</span> <span class="string">ubuntu-latest</span></span><br><span class="line"><span class="attr">    steps:</span></span><br><span class="line"><span class="attr">      - uses:</span> <span class="string">actions/checkout@v1</span></span><br><span class="line"><span class="attr">      - name:</span> <span class="string">Cache</span> <span class="string">node</span> <span class="string">modules</span></span><br><span class="line"><span class="attr">        uses:</span> <span class="string">actions/cache@v1</span></span><br><span class="line"><span class="attr">        with:</span></span><br><span class="line"><span class="attr">          path:</span> <span class="string">node_modules</span></span><br><span class="line"><span class="attr">          key:</span> <span class="string">$&#123;&#123;runner.OS&#125;&#125;-$&#123;&#123;hashFiles('**/package-lock.json')&#125;&#125;</span></span><br><span class="line"><span class="attr">      - uses:</span> <span class="string">yrpang/github-actions-hexo@master</span></span><br><span class="line"><span class="attr">        with:</span></span><br><span class="line"><span class="attr">          deploykey:</span> <span class="string">$&#123;&#123;secrets.github_pages_deploykey&#125;&#125;</span></span><br><span class="line"><span class="attr">          username:</span> <span class="string">zhongpan</span></span><br><span class="line"><span class="attr">          email:</span> <span class="string">zhongpan2000@gmail.com</span></span><br><span class="line"><span class="attr">      - name:</span> <span class="string">repo-sync</span></span><br><span class="line"><span class="attr">        uses:</span> <span class="string">wei/git-sync@v1</span></span><br><span class="line"><span class="attr">        env:</span></span><br><span class="line"><span class="attr">          SOURCE_REPO:</span> <span class="string">"https://github.com/zhongpan/zhongpan.github.io.git"</span></span><br><span class="line"><span class="attr">          SOURCE_BRANCH:</span> <span class="string">"master"</span></span><br><span class="line"><span class="attr">          DESTINATION_REPO:</span> <span class="string">"https://$<span class="template-variable">&#123;&#123; secrets.coding_blog_user_token &#125;&#125;</span>@e.coding.net/zhongpan/blog.git"</span></span><br><span class="line"><span class="attr">          DESTINATION_BRANCH:</span> <span class="string">"master"</span></span><br><span class="line"><span class="attr">        with:</span></span><br><span class="line"><span class="attr">          args:</span> <span class="string">$SOURCE_REPO</span> <span class="string">$SOURCE_BRANCH</span> <span class="string">$DESTINATION_REPO</span> <span class="string">$DESTINATION_BRANCH</span></span><br></pre></td></tr></table></figure>
+<h2 id="dns解析">DNS解析</h2>
+<p>最后就是DNS的问题的，自建网站有自己的域名，为了解决baidu抓取页面问题，国内需要解析到coding pages上，具体也可以有两种方式：</p>
+<p>方案一：境内访问coding pages，境外访问github pages</p>
+<p>方案二：仅baidu访问coding pages，其他访问github pages</p>
+<p>推荐方案一，coding pages在境内访问速度非常快，境外还是访问github pages，这样相当于自建了一个CDN。我使用的阿里云域名服务，设置域名解析记录如下：</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/60758f22-e0fc-42e9-a409-4199ef752287/index_files/de3732f9-627f-4893-a679-6242fc15e226.png" alt="image-20200309212330014"></p>
+<p>如果你需要启用https，会遇到一个问题，在coding pages中申请证书失败，是因为证书是通过Let’s Encrypt申请的，这是国外的一个服务，它验证站点的时候会经过上述DNS解析到github pages上去，解决办法是先暂定境外线路解析，申请成功之后再开启。申请证书有效期是3个月，到期后需要重新申请。github pages也是通过Let’s Encrypt申请证书，也是3个月有效期，但是到期会自动帮你申请。</p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2020/03/09/028-fix-baidu-seo-of-github-pages/" title="解决github pages无法被baidu抓取页面问题">http://zhongpan.tech/2020/03/09/028-fix-baidu-seo-of-github-pages/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/hexo/" rel="tag"><i class="fa fa-tag"></i> hexo</a>
+            
+              <a href="/tags/github/" rel="tag"><i class="fa fa-tag"></i> github</a>
+            
+              <a href="/tags/github-actions/" rel="tag"><i class="fa fa-tag"></i> github actions</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/03/04/027-create-multi-module-spring-boot-gradle-project/" rel="next" title="Gradle多模块Spring Boot项目问题总结">
+                  <i class="fa fa-chevron-left"></i> Gradle多模块Spring Boot项目问题总结
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2020/03/23/029-hystrix-ribbon-feign-relationship/" rel="prev" title="深入理解feign、ribbon和hystrix三者的关系及超时配置">
+                  深入理解feign、ribbon和hystrix三者的关系及超时配置 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#coding-pages"><span class="nav-number">1.</span> <span class="nav-text">coding pages</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#镜像方法"><span class="nav-number">2.</span> <span class="nav-text">镜像方法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#github-actions"><span class="nav-number">2.1.</span> <span class="nav-text">github actions</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#仓库访问凭证准备"><span class="nav-number">2.2.</span> <span class="nav-text">仓库访问凭证准备</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#github-pages-deploykey"><span class="nav-number">2.2.1.</span> <span class="nav-text">github pages deploykey</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#coding-pages-token"><span class="nav-number">2.2.2.</span> <span class="nav-text">coding pages token</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完整workflow"><span class="nav-number">2.3.</span> <span class="nav-text">完整workflow</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dns解析"><span class="nav-number">3.</span> <span class="nav-text">DNS解析</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="关注C++的包管理有一段时间了，一直非常羡慕python、java的同学，有非常完善的包管理工具，使用第三方库非常方便。2016年底开始接触到conan，后来又发现vcpkg，两者都是github开源项目，前者后来得到jfrog的支持，其artifactory也增加了对conan包的支持，而后者是大牌microsoft维护的。 conan和vcpkg的出现终于让人眼前一亮，经过1年的发展，到201">
+<meta name="keywords" content="c++,conan,包管理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="conan一年使用总结">
+<meta property="og:url" content="http://zhongpan.tech/2020/01/11/022-one-year-usage-summary-of-conan/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="关注C++的包管理有一段时间了，一直非常羡慕python、java的同学，有非常完善的包管理工具，使用第三方库非常方便。2016年底开始接触到conan，后来又发现vcpkg，两者都是github开源项目，前者后来得到jfrog的支持，其artifactory也增加了对conan包的支持，而后者是大牌microsoft维护的。 conan和vcpkg的出现终于让人眼前一亮，经过1年的发展，到201">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/2b73cb14-ae3f-4770-b4a7-7894469bb41d.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/607477cd-d6e6-46fc-bbed-a32edc911382.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/fa852f4f-cf0d-4348-a342-43947c33a481.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/9f1f10ac-f3cc-4c9f-b6d5-7a36d4743049.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/630a9f1d-8150-46c2-89ed-22f38ebedcee.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/1b6f9819-4c91-4397-a882-d23b32b47fc3.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/1c610f6d-fb80-48dc-9248-4074b52a4c26.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/e66ec1e5-c345-4987-a039-9c12f0de1d6b.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/10120170-c57b-4f1d-b0c6-7d0c891e66a2.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.463Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="conan一年使用总结">
+<meta name="twitter:description" content="关注C++的包管理有一段时间了，一直非常羡慕python、java的同学，有非常完善的包管理工具，使用第三方库非常方便。2016年底开始接触到conan，后来又发现vcpkg，两者都是github开源项目，前者后来得到jfrog的支持，其artifactory也增加了对conan包的支持，而后者是大牌microsoft维护的。 conan和vcpkg的出现终于让人眼前一亮，经过1年的发展，到201">
+<meta name="twitter:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/2b73cb14-ae3f-4770-b4a7-7894469bb41d.png">
+  <link rel="canonical" href="http://zhongpan.tech/2020/01/11/022-one-year-usage-summary-of-conan/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>conan一年使用总结 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2020/01/11/022-one-year-usage-summary-of-conan/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">conan一年使用总结
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-01-11 14:56:42" itemprop="dateCreated datePublished" datetime="2020-01-11T14:56:42+08:00">2020-01-11</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/包管理/" itemprop="url" rel="index"><span itemprop="name">包管理</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>关注C++的包管理有一段时间了，一直非常羡慕python、java的同学，有非常完善的包管理工具，使用第三方库非常方便。2016年底开始接触到conan，后来又发现vcpkg，两者都是github开源项目，前者后来得到jfrog的支持，其artifactory也增加了对conan包的支持，而后者是大牌microsoft维护的。</p>
+<p>conan和vcpkg的出现终于让人眼前一亮，经过1年的发展，到2018年它们相对成熟起来，而我们的产品也急剧膨胀，迫切需要包管理的机制，因此我下定决心将包管理引入到产品中。</p>
+<p>到底选择conan还是vcpkg，有两点使我们必须选择conan，一是跨平台，不仅要支持windows，还要支持linux，二是要能自建包服务器。当时的vcpkg还只能支持windows，当然后来的版本也支持linux了，而自建包服务器，vcpkg一直都不可以。后来证明这个选择是正确的。</p>
+<a id="more"></a>
+<h2 id="项目背景">项目背景</h2>
+<p>先说下我们的产品，这是一个CS结构通信设备管理系统，2010年开始研发，服务端C++实现，采用了分布式计算框架ice，是一个分布式系统。架构上分为平台层和产品层，平台层实现了一些公共框架和服务。截止到2018年中，代码规模产品层达到188W行，86个工程，平台层达到300W行，245个工程。</p>
+<p>最初产品层和平台层的代码是放在一个SVN库里面的，cmake为一个VC解决方案，整体进行编译打包。这种方式的弊端显而易见，平台和产品的边界很容易打破，模块间的依赖关系无法控制，甚至会出现平台对产品的依赖。为了解决这个问题，从2015年开始就不断对开发架构进行调整，经历了两个阶段：</p>
+<p>（1）SVN分离，拆分成产品和平台两个SVN，产品层通过SVN外链链接到平台层SVN，从产品层来看还是一个完整的SVN。将平台层对外头文件和库拆分到单独目录，通过cmake模块控制平台层不能include产品层头文件且产品层只能include平台层对外头文件。cmake为产品层和平台层两个VC解决方案，分别单独编译；</p>
+<p>（2）解除产品层对平台外链，平台层编译后将对外头文件和库打包为SDK压缩包，存放在文件服务器，产品层开发人员下载平台SDK压缩包后解压到相应目录，然后进行产品层开发。</p>
+<p>此时基本控制住了产品和平台的代码边界，但是仍有诸多不便和问题：</p>
+<p>（1）产品层开发人员需要手动下载平台SDK压缩包，使用不方便，而且版本对应关系容易出错；</p>
+<p>（2）平台层仍然是一个整体，新版本开发需要整体分支，无法做到细粒度的复用，而且总是整体编译打包，非常耗时；</p>
+<p>（3）第三方库是手工编译好之后将头文件和库放到SVN上的，没有源代码，如需升级版本或修改源码或调试就非常麻烦。</p>
+<p>要解决上述问题，只能引入包管理机制。</p>
+<h2 id="成功的关键">成功的关键</h2>
+<p>在一个大型组织中引入一项新技术还真不是一件易事，特别是对于一个正在成长中的技术。但是我知道这项技术对于我们非常重要，因此我们迫切的只花了很短时间将平台层的300W行代码全部包化，从2018年8月开始准备，2018年11月我带领团队花费3周时间将平台层完全包化。</p>
+<p>引入包管理主要是解决平台的使用问题，所以要包化的是平台层，产品层是包的消费者。那么我们是怎么将平台层几百万行代码快速包化的呢，成功的关键在于如下几点。</p>
+<h3 id="种子选手">种子选手</h3>
+<p>包化的过程不仅需要懂得如何使用，还包括如何拆分和设计包，包的粒度应该多大。起初，为了快速引入包管理机制，在后者上我们考虑的不够，吃了一些亏。</p>
+<p>在动手之前要对conan做到了然于心，最好的办法是阅读conan的文档，我起码研究了不下三遍，吃透了conan能够提供的方方面面，所以在后面我们需要一种方法将所有包一起本地编译时，我马上想到工作区的方法并成功实现了。</p>
+<p>另外还需要一定python经验，conan自身还是存在一些问题，有时需要修改其源代码。也可能需要修改源代码满足一些特化需求。好在我非常喜欢python，有多年的使用经验了，这一点在后面起到重要作用。</p>
+<p>我自己首先做到成竹在胸，然后再培育一批种子选手，对它们进行培训。这些准备工作是后面快速完成包化的关键。</p>
+<h3 id="制定规则-隐藏细节">制定规则、隐藏细节</h3>
+<p>技术本身往往具有很多灵活性，这是为了适应各种不同场景需要。但是要落地到具体应用，最好加以封装，避免暴露过多细节。如果引入conan后，随之带来的变化会造成困扰，那么再好的东西也会招致反感。不要以为就是敲一个命令行的事情，开发人员都会嫌麻烦，这是在我的组织里面普遍存在的。所以我们尽量做到保持以往的开发习惯，屏蔽掉一些细节，在这方面做了大量工作。下面梳理一下引入包管理后带来的一些变化，以及我们是如何做的。</p>
+<p>（1）开发环境</p>
+<ul>
+<li>
+<p>通过一键脚本初始化conan开发环境，包括registry设置，profile设置；</p>
+</li>
+<li>
+<p>构建的工具也包化，例如cmake，总之一切都是包。</p>
+</li>
+</ul>
+<p>（2）开发过程</p>
+<ul>
+<li>
+<p>包名的名命规则：conan中每个包的名字遵循name/version@user/channel格式，我们将user和channel赋予了特定含义，user用于表示子系统，如ext表示第三方库，core表示自研的公共库等等，channel用于区分开发版本，主干开发版为dev，某分支开发版为xxx_dev，xxx为分支名。</p>
+</li>
+<li>
+<p>包的拆分原则：包的拆分要遵循两个基本原则：最小依赖原则和最大复用原则。最大复用就是，对于复用的要尽量细，对于不复用的，可以粗放一些。最小依赖就是一个包可以精确的依赖必须依赖的。conan并不限制一个包里面包含多少库，但是包是用来复用的，粒度越小复用度也越大，最理想的情况是一个库一个包，除了少数例外：有些库是一系列库的组合，它们的源代码本生没有模块化拆分，例如boost，ice，不好做成多个包；有一些不是用来复用的，例如平台层的公共服务，为了最终产品打包方便，也做成了包。起初为了尽快引入包管理，按照原来的目录结构，做成了大包，也就是一个包包含多个库，这带来了一系列问题，首先造成了依赖关系扩大化，也就是依赖了不该依赖的包，导致编译效率下降，因为头文件搜索路径和导入库数量显著增加了；其次，会遇到一些循环依赖问题，这时必须通过进一步拆分解除循环。</p>
+</li>
+<li>
+<p>产品层如何消费包：对于包的消费方，需要一种方便的方法消费包，我定义了一个特殊的包，集成包，将平台层所有包require到集成包，产品层只需要依赖集成包。</p>
+</li>
+<li>
+<p>包的存储和上传：包的存储采用了商业的artifactory，我们的maven以及npm已经使用了artifactory，前面说了他也支持了conan。包的上传使用开发者自己的账号，这样可以追溯谁修改了包，通过artifactory集成AD可以容易做到这点。conan本身也提供一个简单的服务端，可满足基本使用。</p>
+</li>
+<li>
+<p>版本管理：包化只是一个开始，包化之后变成了一个个可以独立编译的包，每个包可以独立版本演进，这给版本管理带来了更大的挑战。版本管理需要重点考虑几点：不同开发分支的包不会互相影响；什么情况升版本号，升哪些包的版本号；升版本号的规则是怎么样的；如何跟踪版本的变化。我们采取的措施是：通过channel隔离每个分支，彼此互不干扰，每个分支根目录下建立channel.txt文件填入channel名；如果进入集测阶段或释放的产品版本依赖的平台包有修改，就需要升级版本号，版本号升级规则按照SemVer规范，如果修改是二进制向前兼容的，那么依赖它的其他包不需要升版本号，也不需要重编。如果修改不是二进制向前兼容的，那么依赖它的其他包也需要升级版本号。任何包有版本升级后，集成包也需要升级版本号，我们会维护一个版本地图，包含从产品版本到集成包的关系以及集成包包含的所有包版本的关系。</p>
+</li>
+<li>
+<p>整体编译：包的好处是每个包都可以独立开发，但是在新版本开发阶段，往往很多包会一起大量修改（我们将很多并不是为了开发时复用的服务也包化了），为了提高开发效率，最好能将所有包一起本地整体编译，这时conan的工作区就派上用场了，我们使用的1.6.1版本的工作区特性还不完善，我们对源代码做了一些修改。同时产品层编译也做了一些适配，不使用conan缓存，直接使用工作区中的头文件和库。</p>
+</li>
+</ul>
+<p>（3）运行发布</p>
+<ul>
+<li>
+<p>持续集成：主要的变化是监控的粒度变成了一个个包，但是包之间是有关联的。考虑过几种解决方案，方案一，一个包一个job，job触发受影响包的job；方案二，参数化的job，通过pipeline代码并发构建所有受影响包，代码scm的hook触发job；方案三，通过conan工作区机制，整体构建所有包，监控粒度实际变成了所有包。方案一要建立很多job，不可取。方案二是最合理的，但是如果一些底层包变化，整体编译时间还是很长，另外需要scm回调ci支持。方案三的问题是即使没有变化的包也会编译上传。目前，我们采用的方案三。</p>
+<p>方案一、方案二中判断受影响包的方法都是通过conan info -bo来获取的，这仅仅是通过依赖关系计算的，实际上，有时一个包修改了，并不一定需要重新编译依赖它的包，但是目前没有办法识别这一点。</p>
+</li>
+<li>
+<p>运行：分安装包运行和开发环境运行，安装包是通过conan import将包里面的二进制程序拷贝到运行目录，然后打成安装包的。开发环境运行，如果每次都拷贝到运行目录，一来速度慢，二来浪费大量磁盘空间，conan提供了一个virtualrunenv的generator，但是因为我们的包太多了，导致命令行长度过长，无法使用这个特性，最终我们想了一个办法，在运行目录中建立了包中二进制程序的软链接，这是在开发环境启动脚本中自动完成的。</p>
+</li>
+<li>
+<p>压缩源码：每个安装包，同时需要打包对应的源码，便于以后调试使用。conan包对应的源代码也存储在包服务器上，打包的时候可以从其下载源代码。</p>
+</li>
+<li>
+<p>离线使用conan：有些环境无法访问包服务器，需要能够离线使用conan，那么就需要将conan缓存目录也打包。</p>
+</li>
+</ul>
+<h3 id="及时响应调整">及时响应调整</h3>
+<p>有很多情况是一开始没有想到的，完成包化之后，在使用过程中我们不断进行调整。那段时间我天天盯着微信群，有任何问题都会第一时间处理掉，消除大家的疑问。</p>
+<p>例如一开始我们设想的产品层应该都是基于二进制的包去访问平台层，但是实际情况是此时平台层也在大量的开发，经常出现平台层没有及时上传包而导致产品层编译不过。还有平台层改动一个包之后，常常连锁的需要重编其他包上传，开发效率相比之前显著下降，大家迫切需要像以前一样，cmake为一个VC解决方案，整体进行编译。幸好conan的工作区特性正是应对这种场景，但是我们使用的1.6.1版本还存在一些问题，我对源代码进行了一些修改，另外还做了一些优化。</p>
+<p>这种例子还非常多，幸好都一一及时化解。到如今已经稳定运行一年多。</p>
+<h2 id="常见问题总结">常见问题总结</h2>
+<p>以下总结了在使用conan过程中遇到的一些具体问题，希望对遇到相似问题的同学有所帮助。我们使用的conan版本是1.6.1，有些问题在后续版本已经解决，如果你使用的更高版本，可能不会遇到。</p>
+<h3 id="开发环境统一问题">开发环境统一问题</h3>
+<p>初期刚引入conan时，经常报找不到包和registry连不上问题。找不到包通常是开发环境的conan全局编译参数CONAN_USER_HOME/profiles/default设置的不对，而连不上registry通常是因为，默认的conan-center排在第一个位置，内网环境连不上。</p>
+<p>解决措施：在构建脚本中通过-s和-o参数将编译参数固定，不依赖开发者环境上的全局配置。构建脚本中通过-r参数固定registry，不依次查询所有registry。</p>
+<h3 id="整体构建问题">整体构建问题</h3>
+<p>在开发过程中，多个包会一起开发，每个包单独构建，时间太慢，而且conan create构建包是在conan缓存目录中，每次你得切换到缓存目录，在build目录找到VC工程，每次conan create默认又会删除上次的构建，所以非常麻烦。解决这个问题使用了conan工作区的特性，工作区有一个限制是只能用于cmake集成，工作区是就地构建的，不会拷贝到conan缓存构建，并且可以将工作区中的所有包cmake为一个工程。1.6.1版本的工作区还不完善，我们解决了如下问题：</p>
+<p>（1）自动生成conanws.yml文件</p>
+<p>要使用工作区，需要在工作区根目录编写coannws.yml文件，其中定义了每个包的目录、头文件目录和导出库目录以及谁是根包。每当增加新的包或者头文件目录有变化的时候，就需要同步修改这个文件，但是这些信息实际上在conanfile.py文件中都有，所以我做了一个python脚本自动生成conanws.yml文件。</p>
+<p>原理很简单，就是解析conanfile.py文件，提取package_info方法中的头文件目录信息，而根包就是集成包。这里要注意的一点是，conanws.yml中包的顺序是有意义的，必须按照依赖的顺序，这可以通过conan info -bo ALL获取，python脚本中用OrderedDict存储，然后dump到yml文件。</p>
+<p>（2）依赖包的导出库没有加入到当前工程</p>
+<p>工作区里面cmake的时候，因为还没有编译过，还没有生成lib文件或so文件，pckage_info中通过collect_libs()是收集不到库文件的，另外conan的源代码也需要修改。</p>
+<p>解决措施：conanfile.py文件的package_info显式设置self.cpp_info.libs，不要使用tools.collect_libs()，修改conan源代码，在定义target的时候，如果lib目录不包含.conan（也就是不是从缓存中来时）直接拼出库路径，不使用find_library。</p>
+<p>client/generators/cmake_common.py：</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/2b73cb14-ae3f-4770-b4a7-7894469bb41d.png" alt="image-20200127123526166"></p>
+<p>（3）偶尔依赖包的头文件目录和导入库目录没有加入到当前工程</p>
+<p>原因和上面类似，cmake阶段目录还没生成，空目录被过滤掉了。</p>
+<p>1.13.0版本已经修复，<a href="https://github.com/conan-io/conan/releases/tag/1.13.0" target="_blank" rel="noopener">release说明</a>如下，工作区特性已经彻底重构：</p>
+<p>Feature: Re-implement Workspaces based on Editable packages. (<a href="https://github.com/conan-io/conan/pull/4481" target="_blank" rel="noopener">#4481</a>). Docs: <a href="https://github.com/conan-io/docs/pull/1086" target="_blank" rel="noopener">📃</a></p>
+<p>关键代码build_info.py：</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/607477cd-d6e6-46fc-bbed-a32edc911382.png" alt="image-20200127123735288"></p>
+<p>我的临时解决方案：</p>
+<p>client/generators/<code>__init__</code>.py</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/fa852f4f-cf0d-4348-a342-43947c33a481.png" alt="image-20200127154548889"></p>
+<p>（4）生成VC解决方案时，工程间依赖没有建立</p>
+<p>产生这个问题的原因要先说一下conan是如何设置一个包的导入库的，generator为cmake时，conan install时会生成conanbuildinfo.cmake文件，其中定义了conan_target_link_libraries函数，假设A包依赖B包，那么A的CMakeLists.txt中包含conanbuildinfo.cmake，然后调用conan_target_link_libraries(A)，或者如果启用了TARGETES，就是target_link_libraries(A CONAN_PKG::B)，这样就自动将B包的库导入到A包库上，conan_target_link_libraries中实际上就是调用的target_link_libraries，传输的参数是库名。</p>
+<p>target_link_libraries的参数可以是target名，也可以是库名，当为target名时，会自动加入工程的依赖，但是当为库名时，就不会自动加入也做不到自动。但是当库名和target名一样时，依赖是可以加上的，大多数情况其实是一样的。可是偏巧我们的库名和target名就不一样，所以才有此问题。</p>
+<p>解决措施：修改conan源码，在conan_target_link_libraries中显式调用add_dependencies加入依赖，我们的库名和target名是有对应关系的，从库名得到target名，然后调用add_dependencies。</p>
+<p>（5）会出现副作用，包不能单独编译了</p>
+<p>使用整体构建后，会出现有人通过…跳出包的根目录，访问其他包的头文件，这时是可以成功编译了，从而掩盖了问题。但是当单独编译包时问题暴露了。</p>
+<p>解决这个问题的方法是将add_library等方法封装了一个版本，所有包统一调用封装的，然后在封装版本中检查target的include_directories。这个办法只能检查include_directories属性，头文件里面#include的无法检查。</p>
+<p>（6）工作区的其他限制</p>
+<ul>
+<li>build方法不能有编译逻辑，包括向CMake传递变量，只能直接调用CMake，所有编译逻辑必须在CMakeLists.txt中；</li>
+<li>每个包导出的目录结构（二进制包中的结构）和源码本身的目录结构必须一致。所谓包导出的目录结构，就是package方法中拷贝的目的目录。如果不一致，一个补救方法是在package_info方法中的self.cpp_info.includedirs.append加入和导出目录不一致的本地目录。<br>
+例如：某包，导出目录有include/gsclient，但本地目录为gsclient/include，要么调整本地目录，也变成include/gsclient，要么加入self.cpp_info.includedirs.append(“gsclient/include”)。</li>
+<li>不能通过self.deps_cpp_info[xxx].rootpath访问lib、bin外的其他目录，因为在缓存中二进制包的布局是所有内容都在rootpath下，但是工作区中，只有二进制内容在rootpath下，其他在源码目录下。要想在缓存和工作区都能工作的方法，只能通过self.deps_cpp_info[xxx].include_paths，然后…跳到上一级访问。</li>
+</ul>
+<h3 id="编译时间变慢问题">编译时间变慢问题</h3>
+<p>前面说明过包的拆分原则，对于复用的包，最好一个库一个包，因为直接的一个问题是会导致编译时间变长，原因是头文件搜索路径变多，导入库变多。例如假设A包有2个库a_1、a_2，a_1需要依赖B包，a_2需要依赖C包，B和C各有10个头文件路径，那么a_1和a_2的搜索路径就都是20个，不是10个。因为默认情况下conan的头文件路径和库都是以包为粒度的。</p>
+<p>一个缓解的办法是启用TARGETES，原来是调用conan_basic_setup()，现在变成调用conan_basic_setup(TARGETES)，然后原来a_1、a_2是调用conan_target_link_libraries(a_1)、conan_target_link_libraries(a_2)，现在变成了target_link_libraries(a_1 CONAN_PKG::B)、target_link_libraries(a_2 CONAN_PKG::C)。这样a_1和a_2的搜索路径就都是10个。</p>
+<p>另外尽量避免因为依赖传递而导致依赖不需要的库，可使用private依赖。当只有cpp依赖某个包，导出头文件不需要依赖时，可以使用private依赖，这样这个依赖的包就不会扩散出去。</p>
+<p>以上只是缓解的办法，最好的办法还是一个库一个包，做到依赖最小化，精确的依赖。</p>
+<h3 id="磁盘空间问题">磁盘空间问题</h3>
+<p>我们的开发环境采用的云桌面，每个人只有40G磁盘空间，所以磁盘空间成了一个重要问题。按照常规的做法，消费包的一方，只能从conan缓存中获取。这样采用工作区编译后，还需要export-pkg到缓存，然后运行的时候还需要import到运行目录，这样就会同样的内容有三份。我们的程序用的debug版，带pdb文件，更加重磁盘负担，上述40G空间远远不够。</p>
+<p>为了解决上述问题，首先消费包的一方能否直接从工作区访问头文件和导出库，我想了一个办法，直接将工作区中集成包的conanbuildinfo.cmake、conanbuildinfo.txt、conaninfo.txt文件拷贝到消费包，不运行conan install，打通了第一关。其次运行时能否不用import，前面提到了virtualrunenv用不了，最后使用的办法是解析conanbuildinfo.txt文件，将依赖的二进制文件建立软链接到运行目录下，windows下是mklink命令。这样就确保了包的二进制文件只存在一份。</p>
+<h3 id="兼容性问题">兼容性问题</h3>
+<h4 id="package-id">package_id</h4>
+<p>conan是用package_id唯一标识一个二进制包，同一个包的不同二进制包的package_id是不一样的，它们也是不兼容的。package_id是控制兼容性的一种手段，如果不兼容了，那么我们就要让package_id产生新的。如果package_id没有变化，那么之前upload到remote的二进制包还可以使用，也就意味着承认是兼容的。</p>
+<p>package_id有一个默认的生成规则，根据如下内容的变化：</p>
+<p>（1）自身settings或options变化；</p>
+<p>（2）require包的增减，也就是name变化；</p>
+<p>（3）require包的版本变化，这时默认是按照SemVer规范，1.0.0之前总是影响，1.0.0之后只有主版本号变化才影响。</p>
+<p>上述（2）（3）不仅影响自己，下游的包都会受影响，所谓下游，例如A依赖B，A就是下游，那么自身和下游全部都需要重新编译上传，了解了上述规则之后，会帮助我们解决两类问题：</p>
+<p>（1）修改conanfile.py文件后，导致找不到某些二进制包，就是因为package_id发生了变化，需要重新编译上传；</p>
+<p>（2）如果所有包的版本严格按照SemVer规范，那么按照默认的package_id生成规则是可以良好运行的，但是也会有一些特殊情况，conan提供了方法修改上述默认规则，例如可以让require包的minor或patch版本号也参与计算。</p>
+<h4 id="升级包版本">升级包版本</h4>
+<p>升级某个包依赖的包的版本之后，自身的版本号是否需要升级，这也是困扰我们的问题。</p>
+<p>用一个例子来说明，假设A/1.0.0，A/1.1.0都依赖C/1.0.0，C/1.0.0依赖D/1.0.0。A/1.0.0是之前释放的版本，A/1.1.0是正在开发的版本，C/1.0.0，D/1.0.0是公共库。在开发A/1.1.0的过程中升级D为1.1.0，C的代码没有改动。那么此时C的版本是否需要升级？</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>方案</th>
+<th>问题</th>
+<th>解决措施</th>
+<th>是否推荐</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>方案一</td>
+<td>C升级版本号为1.1.0</td>
+<td>代码没有任何改动却升级版本号</td>
+<td></td>
+<td>否</td>
+</tr>
+<tr>
+<td>方案二</td>
+<td>C不升级版本号但require改为D/1.1.0</td>
+<td>导致A/1.0.0再次编译时使用了新版本D，但是A/1.0.0是已经释放的</td>
+<td></td>
+<td>否</td>
+</tr>
+<tr>
+<td>方案三</td>
+<td>C不升级版本号且不修改require，在A/1.1.0中override为D/1.1.0</td>
+<td>从C的recipe无法create出依赖新版D的包(这个例子中D从1.0.0到1.1.0是兼容的，不需要重编C，如果D变成2.0.0就需要重编C)</td>
+<td>下游包使用–build=missing</td>
+<td>是</td>
+</tr>
+</tbody>
+</table>
+<p>总之，只有修改了代码才升级版本号。</p>
+<h4 id="override">override</h4>
+<p>前面提到上游包或者消费包中可以override下游包的版本。</p>
+<p>require还可以增加override参数，写法是self.requires(“X/1.0.0@user/channel”, override=True)或者requires = ((“X/1.0.0@user/channel”, “override”))。</p>
+<p>那么带上override参数是什么作用呢，其实是针对条件化require的，如果存在override的包，就override版本号，如果不存在，就不会引入依赖。所以这个override名字取得不太好，其实不带override参数也是override的，只是这时即使上游没有这个包，也会引入依赖。</p>
+<p>override一般是新版本，那么可以回退版本吗？答案是编译虽然可以通过，但是可能出现兼容性问题，最好只用于升级版本。</p>
+<p>还有会出现同时存在两个版本包吗？答案是不会，conan会报错，这时必须在上游包override版本号。</p>
+<blockquote>
+<p>ERROR: Conflict in CC/1.2.0@zhongpan/testing<br>
+Requirement DD/1.1.0@zhongpan/testing conflicts with already defined DD/1.0.0@zhongpan/testing<br>
+Keeping DD/1.0.0@zhongpan/testing<br>
+To change it, override it in your base requirements</p>
+</blockquote>
+<h3 id="追踪包上传日志">追踪包上传日志</h3>
+<p>有时会出现某个人提交一个包导致产品编译不过，如何追踪谁提交过包，通过artifactory提供的aql接口，可以很容易查询到，下面的例子查询了非unm_ci用户提交的，近几天满足条件的上传记录，注意这些记录是以文件为粒度的。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># -*- coding: UTF-8 -*-</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> OrderedDict</span><br><span class="line"></span><br><span class="line">url = <span class="string">"http://10.170.3.50:8040/artifactory/api/search/aql"</span></span><br><span class="line">headers = &#123;<span class="string">"Content-Type"</span>:<span class="string">"text/plain"</span>,</span><br><span class="line"><span class="string">"X-JFrog-Art-Api"</span>:<span class="string">"AKCp5dLCa9UmtgDdQGJzm87onMPyKHxpGJ7YDNTbQomQ8aEzEW8fXcFWMzbSJwufckLkSe6oU"</span>&#125;</span><br><span class="line">data = <span class="string">'''</span></span><br><span class="line"><span class="string">items.find(</span></span><br><span class="line"><span class="string">  &#123;</span></span><br><span class="line"><span class="string">    "$and":[</span></span><br><span class="line"><span class="string">      &#123;"$or":[</span></span><br><span class="line"><span class="string">        &#123;"@conan.package.user":&#123;"$eq":"ext"&#125;&#125;,</span></span><br><span class="line"><span class="string">        &#123;"@conan.package.user":&#123;"$eq":"core"&#125;&#125;,</span></span><br><span class="line"><span class="string">        &#123;"@conan.package.channel":&#123;"$eq":"stable"&#125;&#125;,</span></span><br><span class="line"><span class="string">        &#123;"@conan.package.channel":&#123;"$match":"%s"&#125;&#125;</span></span><br><span class="line"><span class="string">      ]&#125;,    </span></span><br><span class="line"><span class="string">      &#123;"$rf":[</span></span><br><span class="line"><span class="string">        &#123;"$or":[</span></span><br><span class="line"><span class="string">          &#123;"property.key":&#123;"$eq":"conan.package.name"&#125;&#125;,</span></span><br><span class="line"><span class="string">          &#123;"property.key":&#123;"$eq":"conan.package.version"&#125;&#125;,</span></span><br><span class="line"><span class="string">          &#123;"property.key":&#123;"$eq":"conan.package.user"&#125;&#125;,</span></span><br><span class="line"><span class="string">          &#123;"property.key":&#123;"$eq":"conan.package.channel"&#125;&#125;,</span></span><br><span class="line"><span class="string">          &#123;"property.key":&#123;"$eq":"conan.settings.os"&#125;&#125;,</span></span><br><span class="line"><span class="string">          &#123;"property.key":&#123;"$eq":"conan.settings.arch"&#125;&#125;,</span></span><br><span class="line"><span class="string">          &#123;"property.key":&#123;"$eq":"conan.settings.build_type"&#125;&#125;,</span></span><br><span class="line"><span class="string">          &#123;"property.key":&#123;"$eq":"conan.settings.compiler"&#125;&#125;</span></span><br><span class="line"><span class="string">        ]&#125;</span></span><br><span class="line"><span class="string">      ]&#125;,</span></span><br><span class="line"><span class="string">      &#123;"modified":&#123;"$last":"%dd"&#125;&#125;,</span></span><br><span class="line"><span class="string">      &#123;"modified_by":&#123;"$ne":"unm_ci"&#125;&#125;</span></span><br><span class="line"><span class="string">    ]</span></span><br><span class="line"><span class="string">  &#125;</span></span><br><span class="line"><span class="string">).</span></span><br><span class="line"><span class="string">include("modified_by","modified","name","type","path","archive").</span></span><br><span class="line"><span class="string">sort(&#123;"$desc" : ["modified"]&#125;)</span></span><br><span class="line"><span class="string">'''</span></span><br><span class="line">            </span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    parser = argparse.ArgumentParser()</span><br><span class="line">    parser.add_argument(<span class="string">"--channel"</span>, <span class="string">"-ch"</span>, help=<span class="string">"channel in package recipe"</span>, type=str, default=<span class="string">"*"</span>)</span><br><span class="line">    parser.add_argument(<span class="string">"--days"</span>, <span class="string">"-d"</span>, help=<span class="string">"modified last days"</span>, type=int, default=<span class="string">"1"</span>)</span><br><span class="line">    args = parser.parse_args()</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        r = requests.post(url, headers=headers, data=data % (args.channel, args.days))</span><br><span class="line">        <span class="keyword">if</span> r.status_code == <span class="number">200</span>:</span><br><span class="line">            results = OrderedDict()</span><br><span class="line">            items = r.json()[<span class="string">'results'</span>]</span><br><span class="line">            <span class="keyword">for</span> item <span class="keyword">in</span> items:</span><br><span class="line">                paths = item[<span class="string">'path'</span>].split(<span class="string">'/'</span>)</span><br><span class="line">                <span class="keyword">if</span> len(paths) &lt; <span class="number">4</span>:</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line">                recipe = <span class="string">"%s/%s@%s/%s"</span> % (paths[<span class="number">1</span>], paths[<span class="number">2</span>], paths[<span class="number">0</span>], paths[<span class="number">3</span>])</span><br><span class="line">                results[item[<span class="string">'modified'</span>]] = (recipe, item[<span class="string">'modified_by'</span>])</span><br><span class="line">            <span class="keyword">print</span> <span class="string">u"最近%d天上传包列表："</span> % args.days</span><br><span class="line">            <span class="keyword">for</span> key <span class="keyword">in</span> results.keys():</span><br><span class="line">                <span class="keyword">print</span> <span class="string">"%s, %s, %s"</span> % (results[key][<span class="number">0</span>],results[key][<span class="number">1</span>],key)</span><br><span class="line">    <span class="keyword">except</span> Exception,e:</span><br><span class="line">        <span class="keyword">print</span> e</span><br></pre></td></tr></table></figure>
+<h3 id="集成incredibuild-加速编译速度">集成IncrediBuild，加速编译速度</h3>
+<p>client/build/cmake.py：</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/9f1f10ac-f3cc-4c9f-b6d5-7a36d4743049.png" alt="image-20200127204728101"></p>
+<h3 id="全局编译链接参数">全局编译链接参数</h3>
+<p>通过增加cmake模块，将add_library等封装，所有包使用封装版本，在封装版本中增加全局编译链接参数。</p>
+<h3 id="其他一些bug">其他一些Bug</h3>
+<p>（1）包压缩文件中没有包含文件修改时间，导致每次install下来时间改变，导致重编</p>
+<p>client/remote_manager.py：</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/630a9f1d-8150-46c2-89ed-22f38ebedcee.png" alt="image-20200127211156003"></p>
+<p>（2）reading .count-file文件编码引起的问题</p>
+<p>新版本已经修改，见<a href="https://github.com/conan-io/conan/commit/79146da40b349b3f6edff922762725d22fcf21e3" target="_blank" rel="noopener">github</a>。</p>
+<p>我的修改方法，util/locks.py：</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/1b6f9819-4c91-4397-a882-d23b32b47fc3.png" alt="image-20200127211715475"></p>
+<p>（3）环境变量处理异常</p>
+<p>在少数环境遇到过此问题，不是所有环境都有，做了如下修改。</p>
+<p>client/tools/env.py：</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/1c610f6d-fb80-48dc-9248-4074b52a4c26.png" alt="image-20200127212230811"></p>
+<h2 id="包的设计">包的设计</h2>
+<p>为了快速引入包管理，我们将平台层整体进行了包化，其中实际上包含一些并不是为了复用的模块，这是对现状的妥协，包化的过程并没有对原有模块结构进行调整，只是将它们简单聚合为包。</p>
+<p>回过头再来想，如果从零开始设计，最关键的还是划分好模块，然后才考虑哪些用conan管理。我们的系统是一个分布式系统，共有70多个服务，代码耦合严重：</p>
+<p>（1）分成了平台层和产品层2个SVN，代码揉在一起，服务不能单独编译，不能独立维护；</p>
+<p>（2）由于上面代码揉在一起，模块间的依赖关系错综复杂，完全失控；</p>
+<p>这样一锅粥的代码可想而知维护是很痛苦的，最大的问题是分支多、合并难、测试工作量大。当下流行的微服务的理念正是拯救我们的良药，何况我们本来就是一个分布式系统。我设想的需要做如下拆分：</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/e66ec1e5-c345-4987-a039-9c12f0de1d6b.png" alt="image-20200129150959303"></p>
+<p>（1）按照服务将代码拆分到不同的Group，每个Group有若干相关的project，每个project可以独立编译；</p>
+<p>（2）每个服务能够独立部署、独立运行；</p>
+<p>（3）服务之间不能有编译时的依赖，只依赖接口契约或API；</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/3618d8cf-eab1-46a3-8dbf-f0d5a4eb4886/index_files/10120170-c57b-4f1d-b0c6-7d0c891e66a2.png" alt="image-20200129151603421"></p>
+<p>理想的情况服务之间只通过接口锲约访问，不依赖服务内部业务对象定义，由接口锲约自动生成代码，编译到客户端服务里面。对于一些复杂的场景，例如需要增加一些缓存机制，优化客户端的访问效率，可以封装为本地API，供其他服务调用。</p>
+<p>（4）每个服务访问不同的数据库；</p>
+<p>（5）服务独享的库放到服务里面，只有多个服务共享的库放到独立的公共库中；极端情况下，公共库都是业务无关的，凡业务相关的通过服务提供RPC接口；</p>
+<p>（6）不同服务运行时可以使用不同版本的公共库。</p>
+<p>按照这样的模块划分之后，并不是所有project都需要使用conan管理，只有复用的project需要，也就接口契约、API、公共库这些，服务就作为包消费者就可以了。</p>
+<h2 id="最后">最后</h2>
+<p>以上就是我使用conan一年来的一些总结和思考，希望对C++的同学有所帮助。conan是一个快速成长的开源项目，迭代非常快，我个人觉得很可能成为C++包管理的事实标准，非常看好它。另外C++本身在今年将迎来一个重量级版本C++20，其中模块、协程相信是大家期待已久的特性。随着C++自身的不断革新和周边工具的充实，我相信这些会”Make CPP great again!“。</p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2020/01/11/022-one-year-usage-summary-of-conan/" title="conan一年使用总结">http://zhongpan.tech/2020/01/11/022-one-year-usage-summary-of-conan/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/c/" rel="tag"><i class="fa fa-tag"></i> c++</a>
+            
+              <a href="/tags/conan/" rel="tag"><i class="fa fa-tag"></i> conan</a>
+            
+              <a href="/tags/包管理/" rel="tag"><i class="fa fa-tag"></i> 包管理</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/11/28/021-ingress-k8s-dashboard-with-traefik/" rel="next" title="使用traefik反向代理k8s dashboard">
+                  <i class="fa fa-chevron-left"></i> 使用traefik反向代理k8s dashboard
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2020/01/31/023-python-refactor-rename-failur-in-vscode/" rel="prev" title="vscode中对python进行修改符号名重构时总是失败">
+                  vscode中对python进行修改符号名重构时总是失败 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#项目背景"><span class="nav-number">1.</span> <span class="nav-text">项目背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#成功的关键"><span class="nav-number">2.</span> <span class="nav-text">成功的关键</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#种子选手"><span class="nav-number">2.1.</span> <span class="nav-text">种子选手</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#制定规则-隐藏细节"><span class="nav-number">2.2.</span> <span class="nav-text">制定规则、隐藏细节</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#及时响应调整"><span class="nav-number">2.3.</span> <span class="nav-text">及时响应调整</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常见问题总结"><span class="nav-number">3.</span> <span class="nav-text">常见问题总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#开发环境统一问题"><span class="nav-number">3.1.</span> <span class="nav-text">开发环境统一问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#整体构建问题"><span class="nav-number">3.2.</span> <span class="nav-text">整体构建问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#编译时间变慢问题"><span class="nav-number">3.3.</span> <span class="nav-text">编译时间变慢问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#磁盘空间问题"><span class="nav-number">3.4.</span> <span class="nav-text">磁盘空间问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#兼容性问题"><span class="nav-number">3.5.</span> <span class="nav-text">兼容性问题</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#package-id"><span class="nav-number">3.5.1.</span> <span class="nav-text">package_id</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#升级包版本"><span class="nav-number">3.5.2.</span> <span class="nav-text">升级包版本</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#override"><span class="nav-number">3.5.3.</span> <span class="nav-text">override</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#追踪包上传日志"><span class="nav-number">3.6.</span> <span class="nav-text">追踪包上传日志</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#集成incredibuild-加速编译速度"><span class="nav-number">3.7.</span> <span class="nav-text">集成IncrediBuild，加速编译速度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#全局编译链接参数"><span class="nav-number">3.8.</span> <span class="nav-text">全局编译链接参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他一些bug"><span class="nav-number">3.9.</span> <span class="nav-text">其他一些Bug</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#包的设计"><span class="nav-number">4.</span> <span class="nav-text">包的设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最后"><span class="nav-number">5.</span> <span class="nav-text">最后</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

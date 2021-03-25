@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="基本需求   VM能够上网：用于VM安装软件   Host能够访问VM，且VM有固定IP：用于Host远程调试VM   VM之间能够互相访问：用于构成分布式环境   VM间文件共享">
+<meta name="keywords" content="vagrant,virtualbox">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用vagrant搭建分布式开发环境">
+<meta property="og:url" content="http://zhongpan.tech/2019/09/21/014-setup-dev-env-with-vagrant/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="基本需求   VM能够上网：用于VM安装软件   Host能够访问VM，且VM有固定IP：用于Host远程调试VM   VM之间能够互相访问：用于构成分布式环境   VM间文件共享">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://zhongpan.tech/2019/09/21/014-setup-dev-env-with-vagrant/1568794799340.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/09/21/014-setup-dev-env-with-vagrant/1568794685915.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/09/21/014-setup-dev-env-with-vagrant/1569048847567.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/09/21/014-setup-dev-env-with-vagrant/1569048891151.png">
+<meta property="og:image" content="http://zhongpan.tech/2019/09/21/014-setup-dev-env-with-vagrant/1569048981963.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.459Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用vagrant搭建分布式开发环境">
+<meta name="twitter:description" content="基本需求   VM能够上网：用于VM安装软件   Host能够访问VM，且VM有固定IP：用于Host远程调试VM   VM之间能够互相访问：用于构成分布式环境   VM间文件共享">
+<meta name="twitter:image" content="http://zhongpan.tech/2019/09/21/014-setup-dev-env-with-vagrant/1568794799340.png">
+  <link rel="canonical" href="http://zhongpan.tech/2019/09/21/014-setup-dev-env-with-vagrant/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>使用vagrant搭建分布式开发环境 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2019/09/21/014-setup-dev-env-with-vagrant/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">使用vagrant搭建分布式开发环境
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-09-21 20:11:31" itemprop="dateCreated datePublished" datetime="2019-09-21T20:11:31+08:00">2019-09-21</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/devtool/" itemprop="url" rel="index"><span itemprop="name">devtool</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="基本需求">基本需求</h2>
+<ul>
+<li>
+<p>VM能够上网：用于VM安装软件</p>
+</li>
+<li>
+<p>Host能够访问VM，且VM有固定IP：用于Host远程调试VM</p>
+</li>
+<li>
+<p>VM之间能够互相访问：用于构成分布式环境</p>
+</li>
+<li>
+<p>VM间文件共享</p>
+</li>
+</ul>
+<a id="more"></a>
+<h2 id="virtualbox的网络模式">VirtualBox的网络模式</h2>
+<p>VirtualBox支持四种网络模式，常用的是NAT和Host-only两种，下图对四种网络模式进行了对比：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>NAT</th>
+<th>Bridged</th>
+<th>Internal</th>
+<th>Host-only(默认)</th>
+<th>Host-only(共享)</th>
+<th>Host-only(桥接)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VM-&gt;Host</td>
+<td>y</td>
+<td>y</td>
+<td>n</td>
+<td>y(到Host-only Adapter)</td>
+<td>y(虚拟机配置Host-only Adapter为网关)</td>
+<td>y(无线网卡不行)</td>
+</tr>
+<tr>
+<td>Host-&gt;VM</td>
+<td>n</td>
+<td>y</td>
+<td>n</td>
+<td>y(从Host-only Adapter)</td>
+<td>y(从Host-only Adapter)</td>
+<td>y</td>
+</tr>
+<tr>
+<td>VM-&gt;Other Host</td>
+<td>y</td>
+<td>y</td>
+<td>n</td>
+<td>n</td>
+<td>y</td>
+<td>y</td>
+</tr>
+<tr>
+<td>Other Host-&gt;VM</td>
+<td>n</td>
+<td>y</td>
+<td>n</td>
+<td>n</td>
+<td>n</td>
+<td>y</td>
+</tr>
+<tr>
+<td>VM&lt;-&gt;VM</td>
+<td>n</td>
+<td>y</td>
+<td>同网络名下可以</td>
+<td>y</td>
+<td>y</td>
+<td>y</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<p>NAT</p>
+<p><img src="/2019/09/21/014-setup-dev-env-with-vagrant/1568794799340.png" alt="1568794799340"></p>
+<p>NAT相关有NAT和NAT 网络两个选项，其区别是前者使用内置的NAT网络，网段为10.0.2.0/24，用户无法修改；后者可以用户定制，通过全局设定中进行配置，如下图。</p>
+<p><img src="/2019/09/21/014-setup-dev-env-with-vagrant/1568794685915.png" alt="1568794685915"></p>
+</li>
+<li>
+<p>Host-only</p>
+<p>Host-only比较复杂，通过配置可以实现各种不同效果，有三种情况：</p>
+<ul>
+<li>
+<p>默认</p>
+<p><img src="/2019/09/21/014-setup-dev-env-with-vagrant/1569048847567.png" alt="1569048847567"></p>
+</li>
+<li>
+<p>共享</p>
+<p><img src="/2019/09/21/014-setup-dev-env-with-vagrant/1569048891151.png" alt="1569048891151"></p>
+<p>这种情况在默认的基础上，为VM增加了连通外网效果。</p>
+</li>
+<li>
+<p>桥接</p>
+<p><img src="/2019/09/21/014-setup-dev-env-with-vagrant/1569048981963.png" alt="1569048981963"></p>
+<p>这种情况和VirtualBox的桥接网络模式实现了一样的效果。这时HOST的网卡不能为无线网卡，在启用802.1x认证的网络也不行。</p>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="vagrant的网络模式">Vagrant的网络模式</h2>
+<p>Vagrant有三种网络模式，并不会覆盖具体虚拟机provider的所有网络模式。</p>
+<table>
+<thead>
+<tr>
+<th>网络模式</th>
+<th>示例</th>
+<th>对应VirtualBox网络模式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Forwarded port</td>
+<td>config.vm.network “forwarded_port”, guest: 80, host: 8080, protocol: “udp”</td>
+<td>NAT</td>
+</tr>
+<tr>
+<td>Private network</td>
+<td>config.vm.network “private_network”, ip: “192.168.50.4”</td>
+<td>Host-only</td>
+</tr>
+<tr>
+<td>Public network</td>
+<td>config.vm.network “public_network”, :bridge =&gt; ‘en1: Wi-Fi (AirPort)’</td>
+<td>Bridged</td>
+</tr>
+</tbody>
+</table>
+<p>如果只配置一个Private network，则vagrant会自动创建一个NAT和一个Host-only网络。</p>
+<p>如果配置多余一个Private network，则vagrant就不会自动创建NAT，而是对应的多个Host-only网络。</p>
+<h2 id="虚拟机间文件共享">虚拟机间文件共享</h2>
+<p>最简单的方式是将Host的某个文件夹映射到所有虚拟机中，通过Vagrant很容易做到这点：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">config.vm.synced_folder &quot;./share&quot;, &quot;/share&quot;, create:true, mount_options:[&quot;dmode=775&quot;,&quot;fmode=664&quot;]</span><br><span class="line">config.vm.synced_folder &quot;.&quot;,&quot;/vagrant&quot;,disabled:true</span><br></pre></td></tr></table></figure>
+<p>默认情况下，vagrant总是将Vagrantfile所在目录文件通过rsync同步到虚拟机的/vagrant目录，这个同步是单向的，上述配置禁用了这一点。然后配置了Vagrantfile所在目录下的share目录映射到虚拟机的/share目录，这是mount进去的，因此是双向的。</p>
+<p>要映射文件夹，还需要在虚拟机中安装VirtualBox Guest Additions，以centos7为例，安装方法如下：</p>
+<p>安装内核开发文件：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo yum install &quot;kernel-devel-uname-r == $(uname -r)&quot;</span><br></pre></td></tr></table></figure>
+<p>如果找不到对应内核开发文件，则更新内核：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo yum update kernel -y</span><br><span class="line">init 6</span><br></pre></td></tr></table></figure>
+<p>安装编译工具：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo yum install kernel-devel gcc make -y</span><br></pre></td></tr></table></figure>
+<p>下载VirtualBox Guest Additions：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -L -O http://download.virtualbox.org/virtualbox/6.0.10/VBoxGuestAdditions_6.0.10.iso</span><br></pre></td></tr></table></figure>
+<p>安装VirtualBox Guest Additions：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sudo mkdir -p /mnt/iso</span><br><span class="line">sudo mount -o loop VBoxGuestAdditions_6.0.10.iso /mnt/iso</span><br><span class="line">cd /mnt/iso</span><br><span class="line">sudo ./VBoxGuestAdditions.run</span><br></pre></td></tr></table></figure>
+<h2 id="开发环境搭建">开发环境搭建</h2>
+<p>为了实现最开始的基本需求，我们只需要选择private_network即可，这时vagrant会为我们创建一个NAT网络和一个Host-only网络，前者可用于上网，后者用于虚拟机之间以及虚拟机和Host的互连，具体Vagrantfile文件如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"># -*- mode: ruby -*-</span><br><span class="line"># vi: set ft=ruby :</span><br><span class="line"></span><br><span class="line">Vagrant.configure(&quot;2&quot;) do |config|</span><br><span class="line"></span><br><span class="line">  config.vm.synced_folder &quot;./share&quot;, &quot;/share&quot;, create:true, mount_options:[&quot;dmode=775&quot;,&quot;fmode=664&quot;]</span><br><span class="line"></span><br><span class="line">  config.vm.synced_folder &quot;.&quot;,&quot;/vagrant&quot;,disabled:true</span><br><span class="line"></span><br><span class="line">  config.vm.define &quot;master&quot; do |master|</span><br><span class="line">    master.vm.box = &quot;centos/7&quot;</span><br><span class="line">    master.vm.network &quot;private_network&quot;, ip: &quot;10.10.10.14&quot;, netmask: &quot;255.255.0.0&quot;</span><br><span class="line">  end</span><br><span class="line">  config.vm.define &quot;node1&quot; do |node1|</span><br><span class="line">    node1.vm.box = &quot;centos/7&quot;</span><br><span class="line">    node1.vm.network &quot;private_network&quot;, ip: &quot;10.10.10.15&quot;, netmask: &quot;255.255.0.0&quot;</span><br><span class="line">  end</span><br><span class="line">  config.vm.define &quot;node2&quot; do |node2|</span><br><span class="line">    node2.vm.box = &quot;centos/7&quot;</span><br><span class="line">    node2.vm.network &quot;private_network&quot;, ip: &quot;10.10.10.16&quot;, netmask: &quot;255.255.0.0&quot;</span><br><span class="line">  end  </span><br><span class="line">end</span><br></pre></td></tr></table></figure>
+<ul>
+<li>虚拟机选用的centos7</li>
+<li>使用了multi-machine特性，在一个Vagrantfile中定义多个虚拟机，如上定义了3个虚拟机</li>
+<li>在VirtualBox中创建Host-only Adapter，其网段为10.10.0.0/16，这样以上虚拟机会自动选择这个Host-only Adapter</li>
+<li>如果虚拟机的ip+netmask和Host-only Adapter不是一个网段，则vagrant会自动创建一个Host-only Adapter，要避免这种情况，以便所有虚拟机使用的一个Host-only Adapter</li>
+</ul>
+<p>使用方法：</p>
+<p>启动所有虚拟机</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vagrant up</span><br></pre></td></tr></table></figure>
+<p>关闭所有虚拟机</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vagrant halt</span><br></pre></td></tr></table></figure>
+<p>启动某个虚拟机</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vagrant up master</span><br></pre></td></tr></table></figure>
+<p>关闭某个虚拟机</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vagrant halt master</span><br></pre></td></tr></table></figure>
+<p>登陆某个虚拟机</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vagrant ssh master</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2019/09/21/014-setup-dev-env-with-vagrant/" title="使用vagrant搭建分布式开发环境">http://zhongpan.tech/2019/09/21/014-setup-dev-env-with-vagrant/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/vagrant/" rel="tag"><i class="fa fa-tag"></i> vagrant</a>
+            
+              <a href="/tags/virtualbox/" rel="tag"><i class="fa fa-tag"></i> virtualbox</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/09/18/013-virtualbox-host-only-problem/" rel="next" title="VirtualBox使用Host-Only报"Failed to attach the network LNU"错误">
+                  <i class="fa fa-chevron-left"></i> VirtualBox使用Host-Only报"Failed to attach the network LNU"错误
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/10/09/015-find-code-dir-from-package-importpath/" rel="prev" title="golang中如何通过包的importpath定位源码目录">
+                  golang中如何通过包的importpath定位源码目录 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#基本需求"><span class="nav-number">1.</span> <span class="nav-text">基本需求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#virtualbox的网络模式"><span class="nav-number">2.</span> <span class="nav-text">VirtualBox的网络模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#vagrant的网络模式"><span class="nav-number">3.</span> <span class="nav-text">Vagrant的网络模式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#虚拟机间文件共享"><span class="nav-number">4.</span> <span class="nav-text">虚拟机间文件共享</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#开发环境搭建"><span class="nav-number">5.</span> <span class="nav-text">开发环境搭建</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="在springboot中开发RESTful接口，经常会遇到日期时间转换相关的问题，例如我们明明输入看起来很正常的日期时间字符串，但是系统却报错无法解析：  JSON parse error: Cannot deserialize value of type java.time.OffsetDateTime from String “2020-06-06 14:26:31”  或者接口返回的日期时间">
+<meta name="keywords" content="spring boot,jackson">
+<meta property="og:type" content="article">
+<meta property="og:title" content="详解Spring Boot中日期时间格式处理">
+<meta property="og:url" content="http://zhongpan.tech/2020/06/04/033-time-format-processing-in-springboot/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="在springboot中开发RESTful接口，经常会遇到日期时间转换相关的问题，例如我们明明输入看起来很正常的日期时间字符串，但是系统却报错无法解析：  JSON parse error: Cannot deserialize value of type java.time.OffsetDateTime from String “2020-06-06 14:26:31”  或者接口返回的日期时间">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.475Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="详解Spring Boot中日期时间格式处理">
+<meta name="twitter:description" content="在springboot中开发RESTful接口，经常会遇到日期时间转换相关的问题，例如我们明明输入看起来很正常的日期时间字符串，但是系统却报错无法解析：  JSON parse error: Cannot deserialize value of type java.time.OffsetDateTime from String “2020-06-06 14:26:31”  或者接口返回的日期时间">
+  <link rel="canonical" href="http://zhongpan.tech/2020/06/04/033-time-format-processing-in-springboot/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>详解Spring Boot中日期时间格式处理 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2020/06/04/033-time-format-processing-in-springboot/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">详解Spring Boot中日期时间格式处理
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-06-04 09:36:22" itemprop="dateCreated datePublished" datetime="2020-06-04T09:36:22+08:00">2020-06-04</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/spring-boot/" itemprop="url" rel="index"><span itemprop="name">spring boot</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在springboot中开发RESTful接口，经常会遇到日期时间转换相关的问题，例如我们明明输入看起来很正常的日期时间字符串，但是系统却报错无法解析：</p>
+<blockquote>
+<p>JSON parse error: Cannot deserialize value of type <code>java.time.OffsetDateTime</code> from String “2020-06-06 14:26:31”</p>
+</blockquote>
+<p>或者接口返回的日期时间字符串是一个很奇怪的字符串：</p>
+<blockquote>
+<p>2020-06-04 14:41:54.767135400+08:00</p>
+</blockquote>
+<p>如何正确的处理日期时间，本文将一探究竟。</p>
+<a id="more"></a>
+<h2 id="日期时间格式标准">日期时间格式标准</h2>
+<p>有两个标准组织对日期时间格式进行规范，一个是IETF，一个是ISO。虽然IETF的定义更早，但是它存在一些问题，ISO的定义使用更普遍。但是不管哪种定义，我们常常使用的yyyy-MM-dd HH:mm:ss这种格式都不是标准的，你是否非常惊讶呢。</p>
+<h3 id="ietf">IETF</h3>
+<h4 id="rfc822-rfc2822-rfc5322"><a href="https://www.ietf.org/rfc/rfc822.txt" target="_blank" rel="noopener">RFC822</a>-&gt;<a href="https://www.ietf.org/rfc/rfc2822.txt" target="_blank" rel="noopener">RFC2822</a>-&gt;<a href>RFC5322</a></h4>
+<p>日期时间的本文表示最早是在电子邮件消息中被讨论和定义，可以追溯到Internet刚诞生之时，<em>ARPA</em>NET使用的文本信息格式中所定义，也就是RFC822，发布于1982年。此后经过若干次修订，定型是RFC2822，最新版是RFC5322。</p>
+<p>通过几个例子来了解下这种格式长什么样子。</p>
+<p>最常见的样子如下，通过linux命令date可以打印：</p>
+<blockquote>
+<p>date --rfc-email</p>
+<p>Thu, 04 Jun 2020 13:54:52 +0800</p>
+</blockquote>
+<p>有些格式已经不建议使用，RFC2822定义为过时的格式，如：</p>
+<ul>
+<li>
+<p>年份使用4位以下数字</p>
+</li>
+<li>
+<p>时区使用时区名，如UT，GMT</p>
+</li>
+</ul>
+<h4 id="rfc1123"><a href="https://www.ietf.org/rfc/rfc1123.txt" target="_blank" rel="noopener">RFC1123</a></h4>
+<p>RFC1123并不定义日期时间格式，而是描述应用程序之间通信协议的需求，包括各种应用层协议，如TELNET，FTP，SMTP等，涉及到日期时间格式的正是SMTP，它引用了RFC822，并说明了年份修改为2到4个数字，建议时区总是使用数字。</p>
+<h4 id="rfc1036"><a href="https://www.ietf.org/rfc/rfc1036.txt" target="_blank" rel="noopener">RFC1036</a></h4>
+<p>同样RFC1306也不定义日期时间格式，而是描述<a href="http://www.ruanyifeng.com/blog/2007/11/usenet.html" target="_blank" rel="noopener">USENET</a>中对日期时间的要求，同样引用了RFC822。</p>
+<p>综上IETF的时间格式主要为电子邮件定义，但是只要以可读文本方式表示时间都可以使用。IETF的定义带有明显的时代和地区特征，并不具有国际通用性，也不便于阅读和解析，因此又出现了ISO的日期时间格式。</p>
+<h3 id="iso8601-rfc3339">ISO8601,<a href="https://www.ietf.org/rfc/rfc3339.txt" target="_blank" rel="noopener">RFC3339</a></h3>
+<p>ISO的日期时间格式有助于避免由许多不同的国家符号引起的国际通信混乱，并提高了计算机用户界面的可移植性。第一版发布于1988年。</p>
+<p>RFC3339是ISO8601的概要版本。</p>
+<p>先通过例子了解一下他们长什么样子。</p>
+<blockquote>
+<p>date --iso-8601=ns</p>
+<p>2020-06-04T14:41:54,767135400+08:00</p>
+<p>date --rfc-3339=ns</p>
+<p>2020-06-04 14:41:54.767135400+08:00</p>
+</blockquote>
+<p>以上是最常见的样子，ISO8601相对于RFC5322有几个主要变化：</p>
+<ul>
+<li>多了秒的小数部分，用.或,连接</li>
+<li>精度上可以从年到秒的小数部分都可以，例如2020、2020-06、2020-06-04都是合法的</li>
+<li>日期和时间之间增加了连接字符T</li>
+<li>可以表示一年的第几周的星期几，例如2020-W01-1表示2020年第一周的星期一</li>
+<li>UTC时区可以简写为Z</li>
+<li>年月日或时分秒之间的连接符可省略</li>
+</ul>
+<p>RFC3339和ISO8601的区别：</p>
+<ul>
+<li>RFC3339允许将日期和时间之间的连接符T换为空格</li>
+<li>秒的小数部分通常使用.连接</li>
+<li>未使用一年的第几周的星期几的表示</li>
+</ul>
+<h2 id="java日期时间编程接口">Java日期时间编程接口</h2>
+<p>Java的发展过程中出现过几个不同的日期时间编程接口。java8之前的日期时间接口存在众所周知的问题，这时只能寻求第三方库库来解决，这就是joda，java8大量借鉴了joda，推出了新的日期时间库。自此，java8日期时间接口成为首选。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>java8之前</th>
+<th>java8</th>
+<th>joda</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本地时间</td>
+<td>java.util.Date</td>
+<td>java.time.LocalDate<br>java.time.LocalTime<br>java.time.LocalDateTime</td>
+<td>org.joda.time.LocalDate<br>org.joda.time.LocalTime<br>org.joda.time.LocalDateTime</td>
+</tr>
+<tr>
+<td>带时区时间</td>
+<td></td>
+<td>java.time.OffsetTime<br>java.time.OffsetDateTime<br>java.time.ZonedDateTime</td>
+<td>org.joda.time.DateTime</td>
+</tr>
+<tr>
+<td>格式化和解析</td>
+<td>java.text.DateFormat</td>
+<td>java.time.format.DateTimeFormatter</td>
+<td>org.joda.time.format.DateTimeFormatter</td>
+</tr>
+<tr>
+<td>举例</td>
+<td>Date date = new Date();<br>SimpleDateFormat fmt = new SimpleDateFormat(“yyyy-MM-dd HH:mm:ss”);<br>String str = fmt.format(date);<br>date = fmt.parse(“2020-06-06 15:13:25”);</td>
+<td>LocalDateTime date = LocalDateTime.now();<br>DateTimeFormatter fmt = DateTimeFormatter.ofPattern(“yyyy-MM-dd HH:mm:ss”);<br>String str = fmt.format(date);<br>TemporalAccessor acc = fmt.parse(“2020-06-06 15:13:25”);<br>date = LocalDateTime.from(acc);</td>
+<td>LocalDateTime date = LocalDateTime.now();<br>DateTimeFormatter fmt = DateTimeFormat.forPattern(“pattern”);<br>String str = fmt.print(date);<br>date = fmt.parseLocalDate(“2020-06-06 15:13:25”);</td>
+</tr>
+</tbody>
+</table>
+<p>以上各种日期时间编程接口都提供了格式化和解析接口，实现字符串和日期时间对象之间的互相转换，我们可以定制日期格式，例如常用的格式yyyy-MM-dd HH:mm:ss，那么格式化和解析都会按照这个格式，解析时如果不符合格式就会异常。</p>
+<h2 id="sprintboot中如何处理日期时间">sprintboot中如何处理日期时间</h2>
+<p>确切的说是如何处理json和java日期时间对象之间的转换。</p>
+<p>springboot极大的简化了springmvc的开发，对于开发RESTful接口也是一样，开箱即用。这是通过autoconfigure和starter实现的。</p>
+<p>首先引入spring-boot-starter-web依赖。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>spring-boot-starter-web会引入spring-boot-starter-json，spring-boot-starter-json又会引入jackson-databind，jackson-datatype-jdk8和jackson-datatype-jsr310。可见json的实现默认是使用的jackson。其中jackson-datatype-jsr310就包含了java8日期时间的序列化、反序列化方法。</p>
+<p>其次springboot应用，也就是使用了@SpringBootApplication注解，通过autoconfigure对jackson进行了自动配置。实现代码在sprint-boot-autoconfigure的JacksonAutoConfiguration.java文件中。</p>
+<p>其中有三个点对jackson进行配置：Jackson2ObjectMapperBuilder，Jackson2ObjectMapperBuilderCustomizer和ObjectMapper，以上所有配置最终都是影响ObjectMapper。</p>
+<ul>
+<li>
+<p>Jackson2ObjectMapperBuilder是ObjectMapper的工厂，只有一个，所以这里使用了@ConditionalOnMissingBean</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span>(proxyBeanMethods = <span class="keyword">false</span>)</span><br><span class="line">	<span class="meta">@ConditionalOnClass</span>(Jackson2ObjectMapperBuilder.class)</span><br><span class="line">	<span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">JacksonObjectMapperBuilderConfiguration</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		<span class="meta">@Bean</span></span><br><span class="line">		<span class="meta">@Scope</span>(<span class="string">"prototype"</span>)</span><br><span class="line">		<span class="meta">@ConditionalOnMissingBean</span></span><br><span class="line">		<span class="function">Jackson2ObjectMapperBuilder <span class="title">jacksonObjectMapperBuilder</span><span class="params">(ApplicationContext applicationContext,</span></span></span><br><span class="line"><span class="function"><span class="params">				List&lt;Jackson2ObjectMapperBuilderCustomizer&gt; customizers)</span> </span>&#123;</span><br><span class="line">			Jackson2ObjectMapperBuilder builder = <span class="keyword">new</span> Jackson2ObjectMapperBuilder();</span><br><span class="line">			builder.applicationContext(applicationContext);</span><br><span class="line">			customize(builder, customizers);</span><br><span class="line">			<span class="keyword">return</span> builder;</span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<ul>
+<li>
+<p>Jackson2ObjectMapperBuilder会调用Jackson2ObjectMapperBuilderCustomizer对builder进行定制，即上述customize方法，Jackson2ObjectMapperBuilderCustomizer可以有多个</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span>(proxyBeanMethods = <span class="keyword">false</span>)</span><br><span class="line">	<span class="meta">@ConditionalOnClass</span>(Jackson2ObjectMapperBuilder.class)</span><br><span class="line">	<span class="meta">@EnableConfigurationProperties</span>(JacksonProperties.class)</span><br><span class="line">	<span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Jackson2ObjectMapperBuilderCustomizerConfiguration</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		<span class="meta">@Bean</span></span><br><span class="line">		<span class="function">StandardJackson2ObjectMapperBuilderCustomizer <span class="title">standardJacksonObjectMapperBuilderCustomizer</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">				ApplicationContext applicationContext, JacksonProperties jacksonProperties)</span> </span>&#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">new</span> StandardJackson2ObjectMapperBuilderCustomizer(applicationContext, jacksonProperties);</span><br><span class="line">		&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<ul>
+<li>
+<p>最后你可以直接配置ObjectMapper，只能有一个，所以你需要指定@Primary，默认是通过builder创建</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">  </span><br><span class="line"><span class="meta">@Configuration</span>(proxyBeanMethods = <span class="keyword">false</span>)</span><br><span class="line"><span class="meta">@ConditionalOnClass</span>(Jackson2ObjectMapperBuilder.class)</span><br><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">JacksonObjectMapperConfiguration</span> </span>&#123;</span><br><span class="line">  </span><br><span class="line">	<span class="meta">@Bean</span></span><br><span class="line">	<span class="meta">@Primary</span></span><br><span class="line">	<span class="meta">@ConditionalOnMissingBean</span></span><br><span class="line">	<span class="function">ObjectMapper <span class="title">jacksonObjectMapper</span><span class="params">(Jackson2ObjectMapperBuilder builder)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> builder.createXmlMapper(<span class="keyword">false</span>).build();</span><br><span class="line">	&#125;</span><br><span class="line">  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>那么对于日期时间的处理，springboot的默认行为是怎么样的呢，默认的代码配置在上述StandardJackson2ObjectMapperBuilderCustomizer中。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">StandardJackson2ObjectMapperBuilderCustomizer</span></span></span><br><span class="line"><span class="class">		<span class="keyword">implements</span> <span class="title">Jackson2ObjectMapperBuilderCustomizer</span>, <span class="title">Ordered</span> </span>&#123;</span><br><span class="line">          ......</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">configureDateFormat</span><span class="params">(Jackson2ObjectMapperBuilder builder)</span> </span>&#123;</span><br><span class="line">		<span class="comment">// We support a fully qualified class name extending DateFormat or a date</span></span><br><span class="line">		<span class="comment">// pattern string value</span></span><br><span class="line">		String dateFormat = <span class="keyword">this</span>.jacksonProperties.getDateFormat();</span><br><span class="line">		<span class="keyword">if</span> (dateFormat != <span class="keyword">null</span>) &#123;</span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				Class&lt;?&gt; dateFormatClass = ClassUtils.forName(dateFormat, <span class="keyword">null</span>);</span><br><span class="line">				builder.dateFormat((DateFormat) BeanUtils.instantiateClass(dateFormatClass));</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">catch</span> (ClassNotFoundException ex) &#123;</span><br><span class="line">				SimpleDateFormat simpleDateFormat = <span class="keyword">new</span> SimpleDateFormat(dateFormat);</span><br><span class="line">				<span class="comment">// Since Jackson 2.6.3 we always need to set a TimeZone (see</span></span><br><span class="line">				<span class="comment">// gh-4170). If none in our properties fallback to the Jackson's</span></span><br><span class="line">				<span class="comment">// default</span></span><br><span class="line">				TimeZone timeZone = <span class="keyword">this</span>.jacksonProperties.getTimeZone();</span><br><span class="line">				<span class="keyword">if</span> (timeZone == <span class="keyword">null</span>) &#123;</span><br><span class="line">					timeZone = <span class="keyword">new</span> ObjectMapper().getSerializationConfig().getTimeZone();</span><br><span class="line">				&#125;</span><br><span class="line">				simpleDateFormat.setTimeZone(timeZone);</span><br><span class="line">				builder.dateFormat(simpleDateFormat);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>其逻辑是首先读取spring.jackson.date-format属性，如果不为空就会设置builder.dateFormat，如果是一个类（当然是从java.text.DateFormat派生），那么初始化为这个类的实例，否则认为配置的yyyy-MM-dd HH:mm:ss这种格式化字符串，然后创建SimpleDateFormat实例。</p>
+<p>另外springmvc本身还有一个MappingJackson2HttpMessageConverter，其实也是配置Jackson2ObjectMapperBuilder。</p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2020/06/04/033-time-format-processing-in-springboot/" title="详解Spring Boot中日期时间格式处理">http://zhongpan.tech/2020/06/04/033-time-format-processing-in-springboot/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/spring-boot/" rel="tag"><i class="fa fa-tag"></i> spring boot</a>
+            
+              <a href="/tags/jackson/" rel="tag"><i class="fa fa-tag"></i> jackson</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/04/22/032-vscode-debug-connection-resused/" rel="next" title="解决vscode调试python遇到connection refused问题">
+                  <i class="fa fa-chevron-left"></i> 解决vscode调试python遇到connection refused问题
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2020/07/20/034-best-practice-of-multi-table-joint-query-in-spring-data-jpa/" rel="prev" title="Spring Data JPA中多表联合查询最佳实践">
+                  Spring Data JPA中多表联合查询最佳实践 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#日期时间格式标准"><span class="nav-number">1.</span> <span class="nav-text">日期时间格式标准</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ietf"><span class="nav-number">1.1.</span> <span class="nav-text">IETF</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#rfc822-rfc2822-rfc5322"><span class="nav-number">1.1.1.</span> <span class="nav-text">RFC822-&gt;RFC2822-&gt;RFC5322</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rfc1123"><span class="nav-number">1.1.2.</span> <span class="nav-text">RFC1123</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rfc1036"><span class="nav-number">1.1.3.</span> <span class="nav-text">RFC1036</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#iso8601-rfc3339"><span class="nav-number">1.2.</span> <span class="nav-text">ISO8601,RFC3339</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#java日期时间编程接口"><span class="nav-number">2.</span> <span class="nav-text">Java日期时间编程接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#sprintboot中如何处理日期时间"><span class="nav-number">3.</span> <span class="nav-text">sprintboot中如何处理日期时间</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

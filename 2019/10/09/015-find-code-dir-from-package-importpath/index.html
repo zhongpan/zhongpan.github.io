@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="golang标准库中的go/build包是用来收集包的一些信息的，例如获取包的源码位置。用来学习golang的交互式教程tour就是使用了go/build定位tour源代码位置，从而在运行时使用其中的文件。但是go/build是有一些使用限制的，主要是在某些情况下无法定位go module的源码位置，那么还有哪些方法可以根据包的importpath获取到包的源代码位置呢，本文详细进行探讨。">
+<meta name="keywords" content="golang,go module">
+<meta property="og:type" content="article">
+<meta property="og:title" content="golang中如何通过包的importpath定位源码目录">
+<meta property="og:url" content="http://zhongpan.tech/2019/10/09/015-find-code-dir-from-package-importpath/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="golang标准库中的go/build包是用来收集包的一些信息的，例如获取包的源码位置。用来学习golang的交互式教程tour就是使用了go/build定位tour源代码位置，从而在运行时使用其中的文件。但是go/build是有一些使用限制的，主要是在某些情况下无法定位go module的源码位置，那么还有哪些方法可以根据包的importpath获取到包的源代码位置呢，本文详细进行探讨。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://zhongpan.tech/2019/10/09/015-find-code-dir-from-package-importpath/1570634569609.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.463Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="golang中如何通过包的importpath定位源码目录">
+<meta name="twitter:description" content="golang标准库中的go/build包是用来收集包的一些信息的，例如获取包的源码位置。用来学习golang的交互式教程tour就是使用了go/build定位tour源代码位置，从而在运行时使用其中的文件。但是go/build是有一些使用限制的，主要是在某些情况下无法定位go module的源码位置，那么还有哪些方法可以根据包的importpath获取到包的源代码位置呢，本文详细进行探讨。">
+<meta name="twitter:image" content="http://zhongpan.tech/2019/10/09/015-find-code-dir-from-package-importpath/1570634569609.png">
+  <link rel="canonical" href="http://zhongpan.tech/2019/10/09/015-find-code-dir-from-package-importpath/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>golang中如何通过包的importpath定位源码目录 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2019/10/09/015-find-code-dir-from-package-importpath/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">golang中如何通过包的importpath定位源码目录
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-10-09 13:20:22" itemprop="dateCreated datePublished" datetime="2019-10-09T13:20:22+08:00">2019-10-09</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/golang/" itemprop="url" rel="index"><span itemprop="name">golang</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>golang标准库中的<a href="https://godoc.org/go/build" target="_blank" rel="noopener">go/build</a>包是用来收集包的一些信息的，例如获取包的源码位置。用来学习golang的交互式教程tour就是使用了go/build定位tour源代码位置，从而在运行时使用其中的文件。但是go/build是有一些使用限制的，主要是在某些情况下无法定位go module的源码位置，那么还有哪些方法可以根据包的importpath获取到包的源代码位置呢，本文详细进行探讨。</p>
+<a id="more"></a>
+<h2 id="起因">起因</h2>
+<p>golang 1.12.9，设置了GO111MODULE=on，也就是显式开启go module。</p>
+<p>按照tour的使用方法，首先：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get golang.org/x/tour</span><br></pre></td></tr></table></figure>
+<p>然后到GOPATH/bin目录下运行tour程序，报如下错误：</p>
+<blockquote>
+<p>Couldn’t find tour files: could not find go-tour content; check $GOROOT and $GOPATH</p>
+</blockquote>
+<p>而在设置GO111MODULE=on之前一切都是正常的。</p>
+<p>通过阅读tour的源代码发现它运行时需要使用源代码目录下的文件，这是通过标准库go/build.Context.Import来定位源代码的路径的，具体代码如下，见local.go文件：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	basePkg    = <span class="string">"golang.org/x/tour"</span></span><br><span class="line">	socketPath = <span class="string">"/socket"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">findRoot</span><span class="params">()</span> <span class="params">(<span class="keyword">string</span>, error)</span></span> &#123;</span><br><span class="line">	ctx := build.Default</span><br><span class="line">	p, err := ctx.Import(basePkg, <span class="string">""</span>, build.FindOnly)</span><br><span class="line">	<span class="keyword">if</span> err == <span class="literal">nil</span> &amp;&amp; isRoot(p.Dir) &#123;</span><br><span class="line">		<span class="keyword">return</span> p.Dir, <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line">	tourRoot := filepath.Join(runtime.GOROOT(), <span class="string">"misc"</span>, <span class="string">"tour"</span>)</span><br><span class="line">	ctx.GOPATH = tourRoot</span><br><span class="line">	p, err = ctx.Import(basePkg, <span class="string">""</span>, build.FindOnly)</span><br><span class="line">	<span class="keyword">if</span> err == <span class="literal">nil</span> &amp;&amp; isRoot(tourRoot) &#123;</span><br><span class="line">		gopath = tourRoot</span><br><span class="line">		<span class="keyword">return</span> tourRoot, <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="string">""</span>, fmt.Errorf(<span class="string">"could not find go-tour content; check $GOROOT and $GOPATH"</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>p.Dir即为包对应的源代码路径，其中关键代码是调用了go/build.Context.Import：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ctxt *Context)</span> <span class="title">Import</span><span class="params">(path <span class="keyword">string</span>, srcDir <span class="keyword">string</span>, mode ImportMode)</span></span></span><br></pre></td></tr></table></figure>
+<p>分析go/build.Context.Import的源代码发现，当srcDir为空时总是无法获取go module包信息。在进一步分析原因之前我们先了解一下go module相关知识。</p>
+<h2 id="go-module">go module</h2>
+<p>go module是golang 1.11引入的包管理机制，可以通过GO111MODULE环境变量控制是否启用，有三个值：</p>
+<ul>
+<li>off：关闭go module</li>
+<li>on：总是使用go module</li>
+<li>auto：默认值，如果当前工程包含go.mod文件则启用 go module，否则使用旧的GOPATH和vendor机制</li>
+</ul>
+<p>当启用go module时，一个变化是下载的依赖包不再放在GOPATH/src目录下，而是放在GOPATH/pkg/mod（未来可能迁移到GOCACHE/mod）下，并且目录带有版本号，以tour为例，启用go module之前源码位置为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GOPATH/src/golang.org/x/tour</span><br></pre></td></tr></table></figure>
+<p>启用之后变为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GOPATH/pkg/mod/golang.org/x/tour@v0.0.0-20191002171047-6bb846ce41cd</span><br></pre></td></tr></table></figure>
+<h2 id="module和package">module和package</h2>
+<p>module和package是集合和元素的关系，一个module可以包含0个、1个或多个package，module的Path和其中package的ImportPath前缀一定是相同的，<a href="http://xn--golang-9v9ii49d.org/x/tools%E6%98%AF%E4%B8%80%E4%B8%AAmodule%EF%BC%8C%E5%85%B6%E4%B8%AD%E7%9A%84golang.org/x/tools/go/packages%E6%98%AF%E4%B8%80%E4%B8%AApackage%E3%80%82" target="_blank" rel="noopener">例如golang.org/x/tools是一个module，其中的golang.org/x/tools/go/packages是一个package。</a></p>
+<p>import一定是package，而不是module，当前module中执行go mod tidy命令可以根据源码中的import补齐go.mod中缺失的module以及删除多余的module。</p>
+<h2 id="回到问题的原因">回到问题的原因</h2>
+<p>go/build在最初没有引入go module之前，总是从GOROOT/src和GOPATH/src下寻找包的，这时是没有问题的，当启用go module后，包缓存变到了GOPATH/pkg/mod下，这时就找不到了，<a href="https://github.com/golang/go/issues/26504" target="_blank" rel="noopener">case 26504</a>提出了这个问题并做了修正，但是出于效率的考虑，只有在特定的情况下才会针对go module进行处理，然后通过执行go list命令实现的。特定的情况是：</p>
+<ol>
+<li>the AllowBinary and IgnoreVendor flags are not set,</li>
+<li>Context describes the local file system (all the helper functions are nil),</li>
+<li>srcDir is outside GOPATH/src (or GO111MODULE=on),</li>
+<li>there’s a go.mod in srcDir or above,</li>
+<li>the release tags are unmodified from Default.Context,</li>
+<li>and path does not name a standard library package.</li>
+</ol>
+<p>当srcDir为空的时候，是没有办法判断上述条件3和4的，就会直接返回失败，所以这时go/build仍然无法获得相应module的信息，tour在调用go/build.Context.Import时传入的srcDir正是为空。</p>
+<h2 id="详解go-build-context-import过程">详解go/build.Context.Import过程</h2>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ctxt *Context)</span> <span class="title">Import</span><span class="params">(path <span class="keyword">string</span>, srcDir <span class="keyword">string</span>, mode ImportMode)</span></span></span><br></pre></td></tr></table></figure>
+<ul>
+<li>path：模块的Path或包的ImportPath</li>
+<li>srcDir：当前工程的源码路径，下面会讲在哪些情况会用到</li>
+<li>mode：FindOnly，AllowBinary，ImportComment，IgnoreVendor</li>
+</ul>
+<p>Import的主要过程如下：</p>
+<ol>
+<li>
+<p>如果为本地包，也就是path为相对路径，相对的正是srcDir，这时先根据srcDir得到绝对路径，然后根据此绝对路径依次在GOROOT/src和GOPATH/src中寻找，绝对路径必须为其子目录，找到第一个符合即Import返回找到包，这种情况下srcDir不能为空，最后p.Dir的结果是Join(srcDir, path)</p>
+</li>
+<li>
+<p>如果非本地包：</p>
+<ol>
+<li>
+<p>首先针对module尝试使用go list命令获取包信息，这时有一系列限制条件，具体见上文，其中需要判断srcDir不在GOROOT/src和GOPATH/src下且其路径上有go.mod文件，所以srcDir为空则直接寻找失败继续下一步，否则执行go list，命令的当前路径为srcDir，srcDir必须为module的路径，类似如下命令，如果成功则Import返回找到包，最后p.Dir的结果是go list返回的Dir</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go list -f &#123;&#123;.Dir&#125;&#125; path</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>然后尝试在vendor目录中寻找，这时srcDir也不能为空，使用srcDir依次在GOROOT/src和GOPATH/src中寻找，srcDir必须为其子目录，找到第一个符合即Import返回找到包，最后p.Dir的结果是Join(Abs(srcDir), “vendor”, path)，否则下一步</p>
+</li>
+<li>
+<p>然后尝试在GOROOT/src中寻找，成功则Import返回找到包，p.Dir的结果为Join(GOROOT, “src”, path)，否则下一步</p>
+</li>
+<li>
+<p>然后尝试依次在所有GOPATH/src中寻找，找到第一个符合即Import返回找到包，p.Dir的结果为Join(GOPATH, “src”, path)</p>
+</li>
+</ol>
+</li>
+<li>
+<p>以上过程都没有定位成功则Import返回失败</p>
+</li>
+</ol>
+<p>根据上述过程，srcDir在下述三种情况下起到重要作用，如果为空则会导致找不到包：</p>
+<ol>
+<li>本地包，此时path是相对srcDir的</li>
+<li>module，此时还需要srcDir不能在GOROOT/src或GOPATH/src中，且路径上包含go.mod文件，srcDir需要为此module的路径</li>
+<li>vendor目录中的包，此时path在Join(srcDir, “vendor”)目录下</li>
+</ol>
+<h2 id="定位包源码位置的方法梳理">定位包源码位置的方法梳理</h2>
+<p>上述go/build在定位包源码位置时存在种种限制，那么是否还有其他的方法，答案是肯定的，共有如下方法：<br>
+<img src="/2019/10/09/015-find-code-dir-from-package-importpath/1570634569609.png" alt="1570634569609"></p>
+<p>它们之间是有依赖关系的，go/build对模块的支持需要调用go list；<a href="http://golang.org/x/tools/go/packages%E9%BB%98%E8%AE%A4%E6%98%AF%E9%80%9A%E8%BF%87go" target="_blank" rel="noopener">golang.org/x/tools/go/packages默认是通过go</a> list来获取包或模块信息的，下面具体说明其使用方法。</p>
+<h3 id="go-list">go list</h3>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go list [-f format] [-json] [-m] [list flags] [build flags] [packages]</span><br></pre></td></tr></table></figure>
+<p>go list用于列出当前目录主包或模块及其依赖。当GO111MODULE=on且没有指定-m时，如果当前目录找不到，还会从GOPROXY指定地址下载，此时不能使用通配符。</p>
+<ul>
+<li>
+<p>packages：当指定-m时为模块的path列表，否则为包的importpath列表；为空时只列出主模块或主包，不为空时则列出匹配的，可以用…通配符；有一些特殊的path，对于模块可以使用all，表示列出当前主模块及所有依赖模块，对于包有all/std/cmd几个，all表示列出GOPATH中所有包，std列出标准库的包，cmd会列出go仓库中的命令及内部库；对于模块还可以使用模块查询，例如可以通过path@version带上版本；更多内容可参考go help packages和go help modules</p>
+</li>
+<li>
+<p>-f format：可以使用go模板定制输出内容</p>
+<ul>
+<li>
+<p>模块有如下字段</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Module <span class="keyword">struct</span> &#123;</span><br><span class="line">    Path     <span class="keyword">string</span>       <span class="comment">// module path</span></span><br><span class="line">    Version  <span class="keyword">string</span>       <span class="comment">// module version</span></span><br><span class="line">    Versions []<span class="keyword">string</span>     <span class="comment">// available module versions (with -versions)</span></span><br><span class="line">    Replace  *Module      <span class="comment">// replaced by this module</span></span><br><span class="line">    Time     *time.Time   <span class="comment">// time version was created</span></span><br><span class="line">    Update   *Module      <span class="comment">// available update, if any (with -u)</span></span><br><span class="line">    Main     <span class="keyword">bool</span>         <span class="comment">// is this the main module?</span></span><br><span class="line">    Indirect <span class="keyword">bool</span>         <span class="comment">// is this module only an indirect dependency of main module?</span></span><br><span class="line">    Dir      <span class="keyword">string</span>       <span class="comment">// directory holding files for this module, if any</span></span><br><span class="line">    GoMod    <span class="keyword">string</span>       <span class="comment">// path to go.mod file for this module, if any</span></span><br><span class="line">    Error    *ModuleError <span class="comment">// error loading module</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> ModuleError <span class="keyword">struct</span> &#123;</span><br><span class="line">    Err <span class="keyword">string</span> <span class="comment">// the error itself</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>包有如下字段</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Package <span class="keyword">struct</span> &#123;</span><br><span class="line">      Dir           <span class="keyword">string</span>   <span class="comment">// directory containing package sources</span></span><br><span class="line">      ImportPath    <span class="keyword">string</span>   <span class="comment">// import path of package in dir</span></span><br><span class="line">      ImportComment <span class="keyword">string</span>   <span class="comment">// path in import comment on package statement</span></span><br><span class="line">      Name          <span class="keyword">string</span>   <span class="comment">// package name</span></span><br><span class="line">      Doc           <span class="keyword">string</span>   <span class="comment">// package documentation string</span></span><br><span class="line">      Target        <span class="keyword">string</span>   <span class="comment">// install path</span></span><br><span class="line">      Shlib         <span class="keyword">string</span>   <span class="comment">// the shared library that contains this package (only set when -linkshared)</span></span><br><span class="line">      Goroot        <span class="keyword">bool</span>     <span class="comment">// is this package in the Go root?</span></span><br><span class="line">      Standard      <span class="keyword">bool</span>     <span class="comment">// is this package part of the standard Go library?</span></span><br><span class="line">      Stale         <span class="keyword">bool</span>     <span class="comment">// would 'go install' do anything for this package?</span></span><br><span class="line">      StaleReason   <span class="keyword">string</span>   <span class="comment">// explanation for Stale==true</span></span><br><span class="line">      Root          <span class="keyword">string</span>   <span class="comment">// Go root or Go path dir containing this package</span></span><br><span class="line">      ConflictDir   <span class="keyword">string</span>   <span class="comment">// this directory shadows Dir in $GOPATH</span></span><br><span class="line">      BinaryOnly    <span class="keyword">bool</span>     <span class="comment">// binary-only package: cannot be recompiled from sources</span></span><br><span class="line">      ForTest       <span class="keyword">string</span>   <span class="comment">// package is only for use in named test</span></span><br><span class="line">      Export        <span class="keyword">string</span>   <span class="comment">// file containing export data (when using -export)</span></span><br><span class="line">      Module        *Module  <span class="comment">// info about package's containing module, if any (can be nil)</span></span><br><span class="line">      Match         []<span class="keyword">string</span> <span class="comment">// command-line patterns matching this package</span></span><br><span class="line">      DepOnly       <span class="keyword">bool</span>     <span class="comment">// package is only a dependency, not explicitly listed</span></span><br><span class="line">  </span><br><span class="line">      <span class="comment">// Source files</span></span><br><span class="line">      GoFiles         []<span class="keyword">string</span> <span class="comment">// .go source files (excluding CgoFiles, TestGoFiles, XTestGoFiles)</span></span><br><span class="line">      CgoFiles        []<span class="keyword">string</span> <span class="comment">// .go source files that import "C"</span></span><br><span class="line">      CompiledGoFiles []<span class="keyword">string</span> <span class="comment">// .go files presented to compiler (when using -compiled)</span></span><br><span class="line">      IgnoredGoFiles  []<span class="keyword">string</span> <span class="comment">// .go source files ignored due to build constraints</span></span><br><span class="line">      CFiles          []<span class="keyword">string</span> <span class="comment">// .c source files</span></span><br><span class="line">      CXXFiles        []<span class="keyword">string</span> <span class="comment">// .cc, .cxx and .cpp source files</span></span><br><span class="line">      MFiles          []<span class="keyword">string</span> <span class="comment">// .m source files</span></span><br><span class="line">      HFiles          []<span class="keyword">string</span> <span class="comment">// .h, .hh, .hpp and .hxx source files</span></span><br><span class="line">      FFiles          []<span class="keyword">string</span> <span class="comment">// .f, .F, .for and .f90 Fortran source files</span></span><br><span class="line">      SFiles          []<span class="keyword">string</span> <span class="comment">// .s source files</span></span><br><span class="line">      SwigFiles       []<span class="keyword">string</span> <span class="comment">// .swig files</span></span><br><span class="line">      SwigCXXFiles    []<span class="keyword">string</span> <span class="comment">// .swigcxx files</span></span><br><span class="line">      SysoFiles       []<span class="keyword">string</span> <span class="comment">// .syso object files to add to archive</span></span><br><span class="line">      TestGoFiles     []<span class="keyword">string</span> <span class="comment">// _test.go files in package</span></span><br><span class="line">      XTestGoFiles    []<span class="keyword">string</span> <span class="comment">// _test.go files outside package</span></span><br><span class="line">  </span><br><span class="line">      <span class="comment">// Cgo directives</span></span><br><span class="line">      CgoCFLAGS    []<span class="keyword">string</span> <span class="comment">// cgo: flags for C compiler</span></span><br><span class="line">      CgoCPPFLAGS  []<span class="keyword">string</span> <span class="comment">// cgo: flags for C preprocessor</span></span><br><span class="line">      CgoCXXFLAGS  []<span class="keyword">string</span> <span class="comment">// cgo: flags for C++ compiler</span></span><br><span class="line">      CgoFFLAGS    []<span class="keyword">string</span> <span class="comment">// cgo: flags for Fortran compiler</span></span><br><span class="line">      CgoLDFLAGS   []<span class="keyword">string</span> <span class="comment">// cgo: flags for linker</span></span><br><span class="line">      CgoPkgConfig []<span class="keyword">string</span> <span class="comment">// cgo: pkg-config names</span></span><br><span class="line">  </span><br><span class="line">      <span class="comment">// Dependency information</span></span><br><span class="line">      Imports      []<span class="keyword">string</span>          <span class="comment">// import paths used by this package</span></span><br><span class="line">      ImportMap    <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span> <span class="comment">// map from source import to ImportPath (identity entries omitted)</span></span><br><span class="line">      Deps         []<span class="keyword">string</span>          <span class="comment">// all (recursively) imported dependencies</span></span><br><span class="line">      TestImports  []<span class="keyword">string</span>          <span class="comment">// imports from TestGoFiles</span></span><br><span class="line">      XTestImports []<span class="keyword">string</span>          <span class="comment">// imports from XTestGoFiles</span></span><br><span class="line">  </span><br><span class="line">      <span class="comment">// Error information</span></span><br><span class="line">      Incomplete <span class="keyword">bool</span>            <span class="comment">// this package or a dependency has an error</span></span><br><span class="line">      Error      *PackageError   <span class="comment">// error loading package</span></span><br><span class="line">      DepsErrors []*PackageError <span class="comment">// errors loading dependencies</span></span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ul>
+<p>下面通过一些例子来说明其使用，假设当前目录为tour源码根目录：</p>
+<ul>
+<li>
+<p>列出主模块目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go lis -m -f &#123;&#123;.Dir&#125;&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>列出主模块和所有依赖模块目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">go list -m -f &#123;&#123;.Dir&#125;&#125; all</span><br><span class="line">go list -m -f &#123;&#123;.Dir&#125;&#125; ...</span><br></pre></td></tr></table></figure>
+<p>上述两种效果是一样的。</p>
+</li>
+<li>
+<p>列出符匹配条件的模块目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go list -m -f &#123;&#123;.Dir&#125;&#125; golang.org/x/...</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>列出主包目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go list -f &#123;&#123;.Dir&#125;&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>列出主包和所有依赖包目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go list -f &#123;&#123;.Dir&#125;&#125; ...</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>列出GOPATH所有包目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go list -f &#123;&#123;.Dir&#125;&#125; all</span><br></pre></td></tr></table></figure>
+</li>
+<li>
+<p>列出符匹配条件的包目录</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go list -f &#123;&#123;.Dir&#125;&#125; golang.org/x/...</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="golang-org-x-tools-go-packages"><a href="http://golang.org/x/tools/go/packages" target="_blank" rel="noopener">golang.org/x/tools/go/packages</a></h3>
+<p>对于本文一开始提到的tour的问题，可以修改findRoot方法，<a href="http://xn--packages-lo3t.xn--Loadgolang-tf2p28j5pjnnjcq3a30bvz7fzsp0s0m.org/x/tour%E7%9A%84%E6%BA%90%E7%A0%81%E4%BD%8D%E7%BD%AE%E3%80%82" target="_blank" rel="noopener">用packages.Load最后再尝试一次定位golang.org/x/tour的源码位置。</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">findRoot</span><span class="params">()</span> <span class="params">(<span class="keyword">string</span>, error)</span></span> &#123;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">	cfg := &amp;packages.Config&#123;Mode: packages.LoadFiles&#125;</span><br><span class="line">	pkgs, _ := packages.Load(cfg, basePkg)</span><br><span class="line">	<span class="keyword">for</span> _, pkg := <span class="keyword">range</span> pkgs &#123;</span><br><span class="line">		<span class="keyword">for</span> _, goFile := <span class="keyword">range</span> pkg.GoFiles &#123;</span><br><span class="line">			root := filepath.Dir(goFile)</span><br><span class="line">			<span class="keyword">if</span> isRoot(root) &#123;</span><br><span class="line">				<span class="keyword">return</span> root, <span class="literal">nil</span></span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="string">""</span>, fmt.Errorf(<span class="string">"could not find go-tour content; check $GOROOT and $GOPATH"</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>packages.Load最后通过调用go list获得包信息，命令如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go list -e -json -compiled -test=false -export=false -deps=false -find=true -- golang.org/x/tour</span><br></pre></td></tr></table></figure>
+<p>因为packages.Config中我们没有指定Dir（这个Dir会作为上述命令执行的目录），所以上述命令使用运行tour的当前目录，也就是WORKSPACE/bin作为当前目录，这时当前目录是找不到包的，但是因为开启了GO111MODULE=on，<a href="http://xn--GOPROXYgolang-930uwa622axkqa32h710fjt0blh2aq43rdmsazrc.org/x/tour%E6%A8%A1%E5%9D%97%EF%BC%8C%E5%A6%82%E6%9E%9C%E6%AD%A4%E6%97%B6%E6%97%A0%E6%B3%95%E8%81%94%E7%BD%91%EF%BC%8C%E6%9C%80%E7%BB%88%E4%B9%9F%E6%89%BE%E4%B8%8D%E5%88%B0%E5%8C%85%E3%80%82" target="_blank" rel="noopener">所以上述命令会尝试从GOPROXY下载golang.org/x/tour模块，如果此时无法联网，最终也找不到包。</a></p>
+<p>packages.Load返回的包信息可使用字段如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// A Package describes a loaded Go package.</span></span><br><span class="line"><span class="keyword">type</span> Package <span class="keyword">struct</span> &#123;</span><br><span class="line">	<span class="comment">// ID is a unique identifier for a package,</span></span><br><span class="line">	<span class="comment">// in a syntax provided by the underlying build system.</span></span><br><span class="line">	<span class="comment">//</span></span><br><span class="line">	<span class="comment">// Because the syntax varies based on the build system,</span></span><br><span class="line">	<span class="comment">// clients should treat IDs as opaque and not attempt to</span></span><br><span class="line">	<span class="comment">// interpret them.</span></span><br><span class="line">	ID <span class="keyword">string</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// Name is the package name as it appears in the package source code.</span></span><br><span class="line">	Name <span class="keyword">string</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// PkgPath is the package path as used by the go/types package.</span></span><br><span class="line">	PkgPath <span class="keyword">string</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// Errors contains any errors encountered querying the metadata</span></span><br><span class="line">	<span class="comment">// of the package, or while parsing or type-checking its files.</span></span><br><span class="line">	Errors []Error</span><br><span class="line"></span><br><span class="line">	<span class="comment">// GoFiles lists the absolute file paths of the package's Go source files.</span></span><br><span class="line">	GoFiles []<span class="keyword">string</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// CompiledGoFiles lists the absolute file paths of the package's source</span></span><br><span class="line">	<span class="comment">// files that were presented to the compiler.</span></span><br><span class="line">	<span class="comment">// This may differ from GoFiles if files are processed before compilation.</span></span><br><span class="line">	CompiledGoFiles []<span class="keyword">string</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// OtherFiles lists the absolute file paths of the package's non-Go source files,</span></span><br><span class="line">	<span class="comment">// including assembly, C, C++, Fortran, Objective-C, SWIG, and so on.</span></span><br><span class="line">	OtherFiles []<span class="keyword">string</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// ExportFile is the absolute path to a file containing type</span></span><br><span class="line">	<span class="comment">// information for the package as provided by the build system.</span></span><br><span class="line">	ExportFile <span class="keyword">string</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// Imports maps import paths appearing in the package's Go source files</span></span><br><span class="line">	<span class="comment">// to corresponding loaded Packages.</span></span><br><span class="line">	Imports <span class="keyword">map</span>[<span class="keyword">string</span>]*Package</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Types provides type information for the package.</span></span><br><span class="line">	<span class="comment">// Modes LoadTypes and above set this field for packages matching the</span></span><br><span class="line">	<span class="comment">// patterns; type information for dependencies may be missing or incomplete.</span></span><br><span class="line">	<span class="comment">// Mode LoadAllSyntax sets this field for all packages, including dependencies.</span></span><br><span class="line">	Types *types.Package</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Fset provides position information for Types, TypesInfo, and Syntax.</span></span><br><span class="line">	<span class="comment">// It is set only when Types is set.</span></span><br><span class="line">	Fset *token.FileSet</span><br><span class="line"></span><br><span class="line">	<span class="comment">// IllTyped indicates whether the package or any dependency contains errors.</span></span><br><span class="line">	<span class="comment">// It is set only when Types is set.</span></span><br><span class="line">	IllTyped <span class="keyword">bool</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// Syntax is the package's syntax trees, for the files listed in CompiledGoFiles.</span></span><br><span class="line">	<span class="comment">//</span></span><br><span class="line">	<span class="comment">// Mode LoadSyntax sets this field for packages matching the patterns.</span></span><br><span class="line">	<span class="comment">// Mode LoadAllSyntax sets this field for all packages, including dependencies.</span></span><br><span class="line">	Syntax []*ast.File</span><br><span class="line"></span><br><span class="line">	<span class="comment">// TypesInfo provides type information about the package's syntax trees.</span></span><br><span class="line">	<span class="comment">// It is set only when Syntax is set.</span></span><br><span class="line">	TypesInfo *types.Info</span><br><span class="line"></span><br><span class="line">	<span class="comment">// TypesSizes provides the effective size function for types in TypesInfo.</span></span><br><span class="line">	TypesSizes types.Sizes</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中并没有包的Dir，所以只有从GoFiles中获取Dir，如果GoFiles为空，这时就无法获取到包的Dir，这似乎是一个问题，<a href="http://xn--golang-hh2lj760a.org/x/tools/go/packages%E8%83%BD%E5%A4%9F%E4%BB%8Ego" target="_blank" rel="noopener">建议golang.org/x/tools/go/packages能够从go</a> list返回这个字段。</p>
+<h3 id="go-build">go/build</h3>
+<p>go/build也是tour所采用的方法，和上述方法的不同之处在于，这个包一次只处理一个包，传入的path不能有通配符，必须是一个明确的path，而上述两种方法是可以批量的。也因此go/build比较注重效率，在<a href="https://github.com/golang/go/issues/26504" target="_blank" rel="noopener">case 26504</a>中已经做了阐述。这个包的使用在传入srcDir参数是也有一些讲究，上文已经详细探讨。</p>
+<h2 id="总结">总结</h2>
+<p>目前并没有完美的方法从包的importpath定位到源码目录，<a href="http://xn--golang-248nx57k.org/x/tools/go/packages%E6%88%96go" target="_blank" rel="noopener">虽然golang.org/x/tools/go/packages或go</a> list可以全面的支持包或模块的检索，但是在不知道源码位置的时候，必须启用GO111MODULE=on并联网，而且这时获取到的版本并不一定是需要的版本，而go/build在GO111MODULE=on时对模块中的包是无法获取源码位置的。</p>
+<p><a href="http://xn--golang-9o7iuc8kpssqi58alkcyxedc778e99s493bbedk9cl3jclll99dq2gga46ypy1g.org/x/tools/go/packages%E6%88%96go" target="_blank" rel="noopener">综上对于模块中的包目前暂且可用的方案也只有golang.org/x/tools/go/packages或go</a> list。对于非模块中的包最好用go/build。</p>
+<p>模块中的包，存在版本号的问题，无法像非模块包那样直接从GOROOT和GOPATH中定位即可，你无法用相同的方法在GOPATH/pkg/mod中定位，因为可能存在多个版本的包，这是难以仅根据包的importpath定位源码位置的问题根源。</p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2019/10/09/015-find-code-dir-from-package-importpath/" title="golang中如何通过包的importpath定位源码目录">http://zhongpan.tech/2019/10/09/015-find-code-dir-from-package-importpath/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/golang/" rel="tag"><i class="fa fa-tag"></i> golang</a>
+            
+              <a href="/tags/go-module/" rel="tag"><i class="fa fa-tag"></i> go module</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/09/21/014-setup-dev-env-with-vagrant/" rel="next" title="使用vagrant搭建分布式开发环境">
+                  <i class="fa fa-chevron-left"></i> 使用vagrant搭建分布式开发环境
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/10/21/016-remote-debug-golang-with-vscode/" rel="prev" title="使用vscode远程调试golang">
+                  使用vscode远程调试golang <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#起因"><span class="nav-number">1.</span> <span class="nav-text">起因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#go-module"><span class="nav-number">2.</span> <span class="nav-text">go module</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#module和package"><span class="nav-number">3.</span> <span class="nav-text">module和package</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回到问题的原因"><span class="nav-number">4.</span> <span class="nav-text">回到问题的原因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#详解go-build-context-import过程"><span class="nav-number">5.</span> <span class="nav-text">详解go/build.Context.Import过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#定位包源码位置的方法梳理"><span class="nav-number">6.</span> <span class="nav-text">定位包源码位置的方法梳理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#go-list"><span class="nav-number">6.1.</span> <span class="nav-text">go list</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#golang-org-x-tools-go-packages"><span class="nav-number">6.2.</span> <span class="nav-text">golang.org/x/tools/go/packages</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#go-build"><span class="nav-number">6.3.</span> <span class="nav-text">go/build</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

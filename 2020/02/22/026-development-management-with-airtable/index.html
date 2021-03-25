@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="2019年的冬天爆发新冠病毒疫情，而我正处于这次疫情的中心武汉，除夕我带着大儿女回到武汉郊区的农村老家，而老婆带着刚满一岁的小儿女留在武汉城区，那个时候已经公布人传人，武汉也刚封城，我虽然意识到严重，但还没有惊慌，执意回了老家。直到后来确诊人数暴增，大量疑似病人无法入院治疗，网络上各种无助的求救，才开始担心起来。现在回想起来决定回老家非常冒险，万一感染亲人将不堪设想。 春节过后，因为疫情，工作中多">
+<meta name="keywords" content="airtable,software devemopement management">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用在线表格airtable进行软件开发管理">
+<meta property="og:url" content="http://zhongpan.tech/2020/02/22/026-development-management-with-airtable/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="2019年的冬天爆发新冠病毒疫情，而我正处于这次疫情的中心武汉，除夕我带着大儿女回到武汉郊区的农村老家，而老婆带着刚满一岁的小儿女留在武汉城区，那个时候已经公布人传人，武汉也刚封城，我虽然意识到严重，但还没有惊慌，执意回了老家。直到后来确诊人数暴增，大量疑似病人无法入院治疗，网络上各种无助的求救，才开始担心起来。现在回想起来决定回老家非常冒险，万一感染亲人将不堪设想。 春节过后，因为疫情，工作中多">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/81076340-51a6-4249-995b-f1003457b5e4/index_files/98e18fc0-7e7b-431f-86d2-dae96db11fff.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/81076340-51a6-4249-995b-f1003457b5e4/index_files/024aac6d-202a-4a55-bc44-cc6d790eeee2.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/81076340-51a6-4249-995b-f1003457b5e4/index_files/318a2ed2-50a1-41f7-a3ed-f4672cd90def.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.467Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用在线表格airtable进行软件开发管理">
+<meta name="twitter:description" content="2019年的冬天爆发新冠病毒疫情，而我正处于这次疫情的中心武汉，除夕我带着大儿女回到武汉郊区的农村老家，而老婆带着刚满一岁的小儿女留在武汉城区，那个时候已经公布人传人，武汉也刚封城，我虽然意识到严重，但还没有惊慌，执意回了老家。直到后来确诊人数暴增，大量疑似病人无法入院治疗，网络上各种无助的求救，才开始担心起来。现在回想起来决定回老家非常冒险，万一感染亲人将不堪设想。 春节过后，因为疫情，工作中多">
+<meta name="twitter:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/81076340-51a6-4249-995b-f1003457b5e4/index_files/98e18fc0-7e7b-431f-86d2-dae96db11fff.png">
+  <link rel="canonical" href="http://zhongpan.tech/2020/02/22/026-development-management-with-airtable/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>使用在线表格airtable进行软件开发管理 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2020/02/22/026-development-management-with-airtable/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">使用在线表格airtable进行软件开发管理
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-02-22 14:55:57" itemprop="dateCreated datePublished" datetime="2020-02-22T14:55:57+08:00">2020-02-22</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/management/" itemprop="url" rel="index"><span itemprop="name">management</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>2019年的冬天爆发新冠病毒疫情，而我正处于这次疫情的中心武汉，除夕我带着大儿女回到武汉郊区的农村老家，而老婆带着刚满一岁的小儿女留在武汉城区，那个时候已经公布人传人，武汉也刚封城，我虽然意识到严重，但还没有惊慌，执意回了老家。直到后来确诊人数暴增，大量疑似病人无法入院治疗，网络上各种无助的求救，才开始担心起来。现在回想起来决定回老家非常冒险，万一感染亲人将不堪设想。</p>
+<p>春节过后，因为疫情，工作中多了一些相关的统计工作，例如统计在家远程办公时长、统计复工情况、统计外地返汉信息等等，经常需要把团队的反馈合并到一起，非常的繁琐。于是我开始寻找一款能够协同编辑的在线表格，让我找到了<a href="https://airtable.com/" target="_blank" rel="noopener">Airtable</a>，瞬间解决了困扰我的问题，真是如获至宝。</p>
+<p>随着复工时间一再推迟，在家远程办公将成为一种常态，怎么做好远程办公是需要好好琢磨的一个事情。怎么样让大家分散各地，但是能够行动一致、高效的工作，是非常有挑战的。这周经过一番折腾，利用Airtable把团队的任务管理起来，我觉得是一个很好的尝试，也让我更加喜欢上Airtable。</p>
+<p>Airtable解决了一个很重要的问题，就是度量和可视化。所谓没有度量就没有改进，管理中需要量化各种数据，这些数据会成为一把戒尺，有意无意中规范影响大家的行为。选择什么的度量指标，是因时因事而异的。再好的项目管理软件也不可能面面俱到，满足各种需求。而Airtable的纯粹，就是为了处理数据、显示数据，可随心所欲定制，成为了它的过人之处。</p>
+<p>下面我就详细说说，我是怎么几小时内就用Airtable打造一个软件开发任务管理系统，我对它非常满意，而如果要开发一个类似的项目管理系统绝不是一时半会能办到的。</p>
+<a id="more"></a>
+<h2 id="airtable简介">Airtable简介</h2>
+<p>Airtable是一个国外的在线服务，注册后即可使用，分免费和付费版本。Airtable中按照workspace-base-table三级来组织数据，一个workspace中可以有多个base，一个base下有多个table。base下的table之间可以关联，但是跨base的表是不能关联的。</p>
+<p>Airtable免费版本不限制base数目，只限制每个base最多1200条记录，2G附件空间，具备团队协作功能，这就完全可以满足一个小团队的使用，大不了数据满了再开一个base，非常厚道。收费版本是按照每workspace以及workspace中的用户数来计算费用，记录数和空间更大，具备高级功能，首次注册可试用15天pro版。</p>
+<h3 id="与excel区别">与excel区别</h3>
+<p>Airtable和excel虽然有相似功能，但设计理念完全不同于excel。Airtable的base和数据库很像，其中每个table，每一列有固定类型和含义，而excel就是二维的单元格，可随心所欲编辑。正因为如此，Airtable和excel在公式的使用上存在很大不同，例如：</p>
+<ul>
+<li>Airtable的公式是定义在列上的，也就是应用在列的所有单元格，而excel的每个单元格可以定义不同的公式；</li>
+<li>Airtable的公式不能跨table，需要借助关联表实现跨table，并且公式总是访问本行数据，而excel的公式可以访问其他sheet数据，也可以访问本sheet任意单元格数据。</li>
+</ul>
+<p>实际上Airtable不是一个在线excel，它更像一个开发平台，凡是基于关系数据的信息处理系统，都可以用它实现。</p>
+<h3 id="主要功能">主要功能</h3>
+<h4 id="视图">视图</h4>
+<p>用于展现和操作表的界面，有Grid、Form、Calendar、Gallerv、Kanban几种，Grid是最常用的，新建table时默认建立一个Grid视图。一个table可以建多个视图。Grid视图中有过滤、分组、排序、着色等功能。过滤不像excel那样在列上操作，感觉没有excel方便，每个视图可以设置不同的过滤条件。</p>
+<h4 id="表建模和数据操作">表建模和数据操作</h4>
+<p>就像设计关系数据库一样，使用Airtable提供的字段类型，将表及关联设计出来。字段类型大概有这么几类：</p>
+<ul>
+<li>输入字段，例如文本、数字、选择、checkbox等；</li>
+<li>公式字段，是基于其他字段计算出来的；</li>
+<li>表和表之间的关联是通过特殊的字段类型Link to another record建立，基于关联字段可以做一些查找和聚合计算，包括rollup、lookup和count几个字段类型，可以实现丰富的报表统计；</li>
+<li>另外还有自增、创建时间、最后更新时间等有用的字段类型。</li>
+</ul>
+<h4 id="blocks">blocks</h4>
+<p>可以理解成基于上述表的小应用。主要有可视化、数据操作、报表等应用。感觉下一步会做成开放平台，第三方也可以开发blocks，拭目以待。</p>
+<h4 id="协作">协作</h4>
+<p>Owner可以邀请其他人一起协同工作，可基于workspace级别或base级别，不能基于表级别。协同者有Creator、Editor、Commenter、Read only几种角色，权限由高到低。协同编辑时可以实时看到其他人编辑过程，很酷的体验。</p>
+<h4 id="模板">模板</h4>
+<p>也就是预定义好的表模型，创建base时选择，开箱即用。</p>
+<h3 id="理解表的关联">理解表的关联</h3>
+<p>表的关联是实现复杂的报表统计的关键。</p>
+<h4 id="主键">主键</h4>
+<p>每个表的第一列总是主键，不能移动或删除。主键倒不是说内容必须唯一，而是在关联表字段选择时呈现的就是主键的内容，最好能够区分不同的行，但不是强制的。实际上Airtable内部有每一行的唯一标识，可以通过公式RECORD_ID()获取。</p>
+<h4 id="link-to-another-record字段类型">Link to another record字段类型</h4>
+<p>建立A表到B表的关联，是在A表中建立一个Link to another record类型字段，并选择B表。那么在编辑此字段会弹出选择界面列出B表的所有记录。此字段可以设置是否允许多选，如果否，则只能选择一条记录，那么A和B就是多对一的关系。如果允许多选，那么A和B就是多对对的关系。A中建立关联字段后，B表中也会自动建立一个关联字段和A关联，这个字段默认是允许多选的。两边是联动的，都可以进行编辑，一般我们会将一边隐藏掉，总是从另一边进行编辑。</p>
+<h4 id="rollup-lookup-count字段类型">rollup、lookup、count字段类型</h4>
+<p>这几个字段类型必须先建立Link to another record字段，通过Link to another record字段的内容进行查询或计算。</p>
+<ul>
+<li>lookup和rollup是针对关联的表中相关记录的某个字段，选择Link to another record字段字段后还需要选择关联表的某个字段，区别是rollup还可以择应用一些聚合函数，例如SUM、MAX等；</li>
+<li>lookup和rollup只能对关联表的一个字段进行统计，如果希望作用于多个字段，可以在关联表中建立一个公式字段先把多个字段组合在一起；</li>
+<li>count只需选择哪个Link to another record字段，统计选择的个数，其实用rollup也可以实现，相对于是对rollup的特化。</li>
+</ul>
+<h4 id="值类型">值类型</h4>
+<p>上述字段的值类型，在官方文档中没有找到明确说明，通过测试验证结果如下：</p>
+<ul>
+<li>Link to another record
+<ul>
+<li>公式字段访问时为字符串，如果是多选，则是&quot;, &quot;分隔的字符串。如果要统计其个数，一种方法是建立count字段，另一个方法是通过公式<code>LEN({field})-LEN(SUBSTITUTE({field给},&quot;,&quot;,&quot;&quot;))+1</code></li>
+<li>rollup字段聚合函数访问时为数组</li>
+</ul>
+</li>
+<li>lookup：同上</li>
+<li>rollup：同聚合函数的返回类型，其中有几个特别注意是返回的数组类型，包括ARRAYCOMPACT、ARRAYFLATTEN、ARRAYUNIQUE，它们的返回值可以应用COUNTA公式得到数组长度，如果需要当成字符串使用则要使用ARRAYJOIN或CONCATENATE先转成字符串。针对数组类型，我遇到一个需求，想把两个数组连接起来，并去掉重复值，Airtable提供了去除数组重复值的公式，但是没有提供连接数组的公式，没有办法实现这个需求，有所遗憾。</li>
+<li>count：数字</li>
+</ul>
+<h2 id="实现目标">实现目标</h2>
+<p>我的出发点很简单，希望大家有一个统一的视图，都可以看到有哪些任务，任务的进展状态。同时能够量化显示完成率，完成得分等数据并进行排序，形成彼此之间的对比，从而让大家清楚做什么并努力达成目标。</p>
+<h3 id="组织结构">组织结构</h3>
+<p>我管理的团队共26人，我希望划分成若干个小组，通过小组长帮助我管理好任务。小组长要负责任务的计划、跟踪和状态更新。</p>
+<h3 id="管人方面">管人方面</h3>
+<ol>
+<li>
+<p>我希望看到每个人的工作量及排序，以此确定任务安排是否饱满和均衡；</p>
+</li>
+<li>
+<p>我希望看到每个人的任务完成情况得分及排序，这个得分体现了是否按时完成，完成质量如何，以此牵引大家按时保质完成任务；</p>
+</li>
+<li>
+<p>我希望团队组长每周汇报团队相关任务的进展，以便我及时发现问题，做出调整；</p>
+</li>
+</ol>
+<h3 id="管事方面">管事方面</h3>
+<ol>
+<li>任务有两种，一是开发任务，一种是Bug处理任务，这两种是存在区别的，我希望需要区别对待；</li>
+<li>我希望任务是分级的，类似scrum的Epic-Theme-User Story，我只关注顶层的任务，团队组长关注下级任务，我觉得2级就够了，至于下级任务按什么方式定，是按scrum的固定周期迭代，还是长任务，不是我关心的；</li>
+<li>我希望从顶层任务的视角能够看到完成率及排序，从而清楚总体的任务完成情况如何；</li>
+<li>我希望从顶层任务的视角能够看到工作量及排序，从而清楚工作投入的分布；</li>
+<li>我希望具体任务视图能够有一些明显提示任务快到期或已经超时。</li>
+</ol>
+<h2 id="创建表">创建表</h2>
+<p>戳<a href="https://airtable.com/invite/l?inviteId=invWmK71R6yDkmzxe&amp;inviteToken=4f8c096e26d493130b5d0d892efc1dcd9da6084bd739d7cfc18d360cf5752561" target="_blank" rel="noopener">这里</a>，进入我分享的base，详细查看字段类型和公式，还可以实际体验一下。</p>
+<p>根据以上需求，首先建立表结构，如下图所示。</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/81076340-51a6-4249-995b-f1003457b5e4/index_files/98e18fc0-7e7b-431f-86d2-dae96db11fff.png" alt="image-20200226084700156"></p>
+<p>（1）上述聚合关系表示关联表，n:1是单选，m:n是多选；</p>
+<p>（2）团队和成员表定义了团队分组；</p>
+<p>（3）Backlog是一级任务，任务和Bug是二级任务；工作量和完成信息定义在二级任务里面；</p>
+<p>（4）Backlog通过任务分类表进行一个分类；</p>
+<p>（5）Bug级别表中定义了一些参数，用于计算Bug工作量；</p>
+<p>（6）任务可能由多个人承担，例如前端和后端都需要开发的功能，所以可以分派给多个人；Bug只能分派给1个人；</p>
+<p>（7）任务和Bug中的负责人，用于提示此人负责任务的创建、跟踪更新及评价，完成表格的所有编辑工作，编辑工作不能开放给所有成员。任务分派给多人正好跨团队时，责任人等于创建人，否则等于团队负责人。Bug的负责人就是分派给的团队负责人；</p>
+<p>（8）周报的粒度是一级任务，每条一级任务每周汇报一次。</p>
+<p>总结几点使用技巧：</p>
+<p>（1）下拉选择的字段，可以创建一个table，然后与其关联。这样一来可能增加可定制性，有变化时不用修改表定义，只需修改表数据，二来可以基于选择内容进行统计；</p>
+<p>（2）隐藏字段用处大，就像变量一样。有时必须借助隐藏字段才能实现功能，例如统计完成率，下面会有介绍；有时可以简化公式，还能增加复用性；还例如过滤功能不能进行复杂的逻辑组合，只能要么全部与，要么全部或，这时可以通过增加隐藏的公式字段来实现复杂逻辑。</p>
+<h2 id="指标设计">指标设计</h2>
+<h3 id="工作量统计">工作量统计</h3>
+<p>对于任务：由团队负责人给出任务估计工作量，如果任务由多人承担，则每个取平均值，然后在成员表和Backlog表中建立rollup字段，对任务表工作量进行sum，得到任务总工作量。</p>
+<p>对于Bug：采用简化处理，工作量直接和Bug级别相关，等于{Bug级别权重}*{Bug工作量基数}，这两个参数定义在Bug级别表中，同样在成员表和Backlog表中建立rollup字段，对bug表工作量进行sum，得到Bug总工作量。</p>
+<p>再分别建立公式字段，将上述两个字段相加得到总工作量。</p>
+<p>这样从成员表和Backlog表都可以看到汇总的工作量情况。</p>
+<h3 id="负荷率统计">负荷率统计</h3>
+<p>主要针对任务，衡量某个人的任务安排是否饱满合理，体现了团队负责人任务计划的能力。合理的负荷率应该是比100%稍高，如果负荷过高通常是估计工作量过高或计划完成时间不合理，也有可能没有考虑一个人分派多个任务的叠加情况。如果负荷过低只有一种可能，就是安排任务过少。</p>
+<p>在任务表中建立公式字段计算任务周期，也就是任务从开始到结束持续的时长，这里将创建时间当成任务开始时间。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IF(&#123;计划完成时间&#125;,(DATETIME_DIFF(&#123;计划完成时间&#125;,&#123;创建时间&#125;,&quot;seconds&quot;)/(60*60*24)),0)</span><br></pre></td></tr></table></figure>
+<p>然后建立公式字段，计算平均日工作量，单位小时。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IF(&#123;任务周期(天)&#125;&lt;=0,0,IF(IS_AFTER(NOW(),&#123;计划完成时间&#125;),0,&#123;平均工作量(天)&#125;*8/&#123;任务周期(天)&#125;))</span><br></pre></td></tr></table></figure>
+<p>然后在成员表中建立rollup字段，对任务表的平均日工作量sum，得到这个人的任务平均日工作量，最后建立公式字段，得到平均任务负荷率。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;任务平均日工作量(小时)&#125;/8</span><br></pre></td></tr></table></figure>
+<h3 id="完成率统计">完成率统计</h3>
+<p>rollup的count聚合函数没有条件过滤特性，所以没法一步到位，需要借助中间字段。</p>
+<p>首先在任务表和Bug表中建立公式字段，根据状态计算是否完成，完成则填入值，为完成为空。</p>
+<p>然后在成员表和Backlog表中建立rollup字段，通过counta聚合函数计算完成数，同时建立count字段计算总数，最后建立公式字段，完成数除以总数，得到完成率。</p>
+<h3 id="评分系统">评分系统</h3>
+<p>设计评分规则如下：</p>
+<p>得分={评分}(只有任务有，Bug无，按时完成才能得到)+{工作量(天)}(完成才能得到)+{提前(天)}(负数表示超期，完成或超期时开始计入)</p>
+<p>评分体现完成质量，前提是按时完成才能得到，超期不能得到，团队负责人要对任务进行验收，验收通过才能视为完成；工作量体现工作付出，必须完成才能得到，也就说要负责到底；提前体现了鼓励大家增量付出。评分规则的牵引方向是按时完成任务，鼓励提前，提前有加分，超期有扣分。</p>
+<ul>
+<li>对于任务</li>
+</ul>
+<p>提前：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IF(&#123;计划完成时间&#125;,IF(&#123;Completed&#125;,DATETIME_DIFF(&#123;计划完成时间&#125;,&#123;状态最后更新时间&#125;,&quot;s&quot;),DATETIME_DIFF(&#123;计划完成时间&#125;,NOW(),&quot;s&quot;)),0)</span><br></pre></td></tr></table></figure>
+<p>得分：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IF(AND(&#123;提前(秒)&#125;&gt;=0,&#123;Completed&#125;),&#123;评分&#125;,0)+IF(&#123;Completed&#125;,&#123;工作量(天)&#125;,0)+IF(OR(&#123;Completed&#125;,&#123;提前(秒)&#125;&lt;0),&#123;提前(秒)&#125;/(60*60*24),0)</span><br></pre></td></tr></table></figure>
+<ul>
+<li>对于Bug</li>
+</ul>
+<p>提前：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IF(&#123;计划解决时间&#125;,IF(&#123;Resolved&#125;,DATETIME_DIFF(&#123;计划解决时间&#125;, &#123;状态最后更新时间&#125;,&quot;s&quot;),DATETIME_DIFF(&#123;计划解决时间&#125;,NOW(),&quot;s&quot;)),0)</span><br></pre></td></tr></table></figure>
+<p>得分：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IF(&#123;Resolved&#125;,&#123;工作量(天)&#125;,0)+IF(OR(&#123;Resolved&#125;,&#123;提前(秒)&#125;&lt;0),&#123;提前(秒)&#125;/(60*60*24),0)</span><br></pre></td></tr></table></figure>
+<p>然后在成员表和Backlog表中通过rollup字段对得分进行求和汇总就得到总得分。</p>
+<h2 id="总结">总结</h2>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/81076340-51a6-4249-995b-f1003457b5e4/index_files/024aac6d-202a-4a55-bc44-cc6d790eeee2.png" alt="image-20200226111736448"></p>
+<p>你是否也喜欢上Airtable，短短数小时之内，你就完全可以打造一款为你量身定做的表格系统。Airtable中已经包含许多适用于特性用途的模板，可以直接拿来使用，非常方便。</p>
+<p>Airtable的统计功能主要是基于关联表和rollup类型字段，其设计非常简洁，甚至简陋，聚合函数功能并不算丰富，只能基于一列聚合，但是其设计又恰到好处，通过变通技巧还是可以实现复杂功能。另外Airtable提供了curl和JavaScript接口，可以集成第三方工具实现更加复杂的功能，例如和IFTTT或Zapier集成。</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/81076340-51a6-4249-995b-f1003457b5e4/index_files/318a2ed2-50a1-41f7-a3ed-f4672cd90def.png" alt="image-20200226120235382"></p>
+<p>当然Airtable也不是万能的，它并不能取代项目管理系统，它还是一个表格系统，缺乏很多项目管理必要的特性，例如工作流管理等等。我主要是在管理团队中使用Airtable，其他人只读查看，因为编辑权限是base粒度的，不能放开给所有人。但是我的需要也不是一个完整的项目管理系统，我只需要能够灵活定制并呈现度量指标，Airtable完全可以胜任。此前我使用过JIRA、Redmine这类项目管理系统，它们也可以自定义字段，但是没有公式和聚合统计这种特性，通常需要通过插件实现，所以定制性受到很大限制，期待有一天它们能够吸收Airtable的特长，让鱼与熊掌可以兼得。</p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2020/02/22/026-development-management-with-airtable/" title="使用在线表格airtable进行软件开发管理">http://zhongpan.tech/2020/02/22/026-development-management-with-airtable/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/airtable/" rel="tag"><i class="fa fa-tag"></i> airtable</a>
+            
+              <a href="/tags/software-devemopement-management/" rel="tag"><i class="fa fa-tag"></i> software devemopement management</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/02/06/025-useful-cpp-memory-related-libraries/" rel="next" title="有用的c++内存相关库">
+                  <i class="fa fa-chevron-left"></i> 有用的c++内存相关库
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2020/03/04/027-create-multi-module-spring-boot-gradle-project/" rel="prev" title="Gradle多模块Spring Boot项目问题总结">
+                  Gradle多模块Spring Boot项目问题总结 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#airtable简介"><span class="nav-number">1.</span> <span class="nav-text">Airtable简介</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#与excel区别"><span class="nav-number">1.1.</span> <span class="nav-text">与excel区别</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#主要功能"><span class="nav-number">1.2.</span> <span class="nav-text">主要功能</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#视图"><span class="nav-number">1.2.1.</span> <span class="nav-text">视图</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#表建模和数据操作"><span class="nav-number">1.2.2.</span> <span class="nav-text">表建模和数据操作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#blocks"><span class="nav-number">1.2.3.</span> <span class="nav-text">blocks</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#协作"><span class="nav-number">1.2.4.</span> <span class="nav-text">协作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#模板"><span class="nav-number">1.2.5.</span> <span class="nav-text">模板</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#理解表的关联"><span class="nav-number">1.3.</span> <span class="nav-text">理解表的关联</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#主键"><span class="nav-number">1.3.1.</span> <span class="nav-text">主键</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#link-to-another-record字段类型"><span class="nav-number">1.3.2.</span> <span class="nav-text">Link to another record字段类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#rollup-lookup-count字段类型"><span class="nav-number">1.3.3.</span> <span class="nav-text">rollup、lookup、count字段类型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#值类型"><span class="nav-number">1.3.4.</span> <span class="nav-text">值类型</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#实现目标"><span class="nav-number">2.</span> <span class="nav-text">实现目标</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#组织结构"><span class="nav-number">2.1.</span> <span class="nav-text">组织结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#管人方面"><span class="nav-number">2.2.</span> <span class="nav-text">管人方面</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#管事方面"><span class="nav-number">2.3.</span> <span class="nav-text">管事方面</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建表"><span class="nav-number">3.</span> <span class="nav-text">创建表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#指标设计"><span class="nav-number">4.</span> <span class="nav-text">指标设计</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#工作量统计"><span class="nav-number">4.1.</span> <span class="nav-text">工作量统计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#负荷率统计"><span class="nav-number">4.2.</span> <span class="nav-text">负荷率统计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完成率统计"><span class="nav-number">4.3.</span> <span class="nav-text">完成率统计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#评分系统"><span class="nav-number">4.4.</span> <span class="nav-text">评分系统</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

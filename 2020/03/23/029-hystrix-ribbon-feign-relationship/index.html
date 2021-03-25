@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="spring cloud中有几个重要的组件，深入理解它们之间的关系才能更好的使用它们：  ribbon：实现服务定位和客户端负载均衡； hystrix：实现服务熔断、服务降级、资源隔离等； feign：声明式的http客户端，用于服务之间的http调用。相比于resttemplate，feign与ribbon和hystrix集成更友好，是spring cloud的顶层组件。  上述ribbon和h">
+<meta name="keywords" content="hystrix,ribbon,feign">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解feign、ribbon和hystrix三者的关系及超时配置">
+<meta property="og:url" content="http://zhongpan.tech/2020/03/23/029-hystrix-ribbon-feign-relationship/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="spring cloud中有几个重要的组件，深入理解它们之间的关系才能更好的使用它们：  ribbon：实现服务定位和客户端负载均衡； hystrix：实现服务熔断、服务降级、资源隔离等； feign：声明式的http客户端，用于服务之间的http调用。相比于resttemplate，feign与ribbon和hystrix集成更友好，是spring cloud的顶层组件。  上述ribbon和h">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/ad672b12-ef2f-41e2-a4b3-1cad41647cb3/index_files/ff291d99-a22f-4638-898a-32a11e165433.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.471Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入理解feign、ribbon和hystrix三者的关系及超时配置">
+<meta name="twitter:description" content="spring cloud中有几个重要的组件，深入理解它们之间的关系才能更好的使用它们：  ribbon：实现服务定位和客户端负载均衡； hystrix：实现服务熔断、服务降级、资源隔离等； feign：声明式的http客户端，用于服务之间的http调用。相比于resttemplate，feign与ribbon和hystrix集成更友好，是spring cloud的顶层组件。  上述ribbon和h">
+<meta name="twitter:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/ad672b12-ef2f-41e2-a4b3-1cad41647cb3/index_files/ff291d99-a22f-4638-898a-32a11e165433.png">
+  <link rel="canonical" href="http://zhongpan.tech/2020/03/23/029-hystrix-ribbon-feign-relationship/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>深入理解feign、ribbon和hystrix三者的关系及超时配置 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2020/03/23/029-hystrix-ribbon-feign-relationship/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">深入理解feign、ribbon和hystrix三者的关系及超时配置
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-03-23 14:48:09" itemprop="dateCreated datePublished" datetime="2020-03-23T14:48:09+08:00">2020-03-23</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a></span>
+
+                
+                
+                  ，
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/java/spring-cloud/" itemprop="url" rel="index"><span itemprop="name">spring cloud</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>spring cloud中有几个重要的组件，深入理解它们之间的关系才能更好的使用它们：</p>
+<ul>
+<li>ribbon：实现服务定位和客户端负载均衡；</li>
+<li>hystrix：实现服务熔断、服务降级、资源隔离等；</li>
+<li>feign：声明式的http客户端，用于服务之间的http调用。相比于resttemplate，feign与ribbon和hystrix集成更友好，是spring cloud的顶层组件。</li>
+</ul>
+<p>上述ribbon和hystrix都是netflix贡献组件，目前它们都处于<a href="https://cloud.spring.io/spring-cloud-static/spring-cloud-netflix/2.2.1.RELEASE/reference/html/#modules-in-maintenance-mode" target="_blank" rel="noopener">维护模式</a>，不再增加新特性，将逐渐被spring cloud官方组件取代，例如从Hoxton.M2开始整合spring-cloud-loadbalancer用于替换ribbon，但目前还不成熟，还是老老实实用ribbon，而断路器方面spring cloud抽象了Spring Cloud Circuit Breaker，hystrix只是其中一个实现，还有其他实现可选，例如阿里贡献的<a href="https://github.com/alibaba/Sentinel" target="_blank" rel="noopener">sentinel</a>。</p>
+<a id="more"></a>
+<h2 id="三者关系">三者关系</h2>
+<p>hystrix和ribbon并没有直接关系。</p>
+<p>feign底层默认是通过ribbon进行服务定位和负载均衡，使用feign时你感知不到ribbon的存在，也可以不使用ribbon。如果你使用resttemplate，则需要通过@LoadBalanced使用ribbon。</p>
+<p>hystrix有两种使用情况，一种是在controller的handler方法上增加@HystrixCommand注解，作用的是整个handler；另一种情况是调用其他app服务时，也就是@feignclient注解的http客户端，此时调用这个http客户端的handler可不需要hystrix。</p>
+<p>总结一下：服务之间的http调用可通过feign实现，feign底层是通过ribbon实现服务发现和负载均衡，不管是否使用feign，ribbon都是必不可少的；feign客户端可选的可启用hystrix支持，hystrix也可以用在服务端整个handler上。</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/ad672b12-ef2f-41e2-a4b3-1cad41647cb3/index_files/ff291d99-a22f-4638-898a-32a11e165433.png" alt="image-20200323210614496"></p>
+<p>如上所示，app1.controll1.handler1调用app2.controller2.handler2的过程是：</p>
+<ol>
+<li>如果feign.hystrix.enabled=true（默认为false），则feign通过jdk动态代理，将调用封装为HystrixCommand，在hystrix thread pool中执行，否则进入3和4；</li>
+<li>hystrix thread pool中执行http调用，还是回调feign接口；</li>
+<li>feign扩展了ribbon客户端，使用ribbon的服务定位和负载均衡获得可用服务；</li>
+<li>feign扩展的ribbon客户端发起对app2.controller2.handler2的http请求，ribbon可以开启重试，如果请求超时则自动重试。</li>
+</ol>
+<p>了解上述关系对于如何设置超时时间至关重要。如果hystrix的超时时间到达，则1就返回fallback了，不会等到4执行完。一般hystrix的超时时间要大于feign的超时时间。</p>
+<p>另外上述服务端设置了断路器，实际上客户端可以不用设置。</p>
+<h2 id="超时相关配置">超时相关配置</h2>
+<h3 id="feign">feign</h3>
+<p><a href="https://cloud.spring.io/spring-cloud-static/spring-cloud-openfeign/2.2.2.RELEASE/reference/html/" target="_blank" rel="noopener">官方参考</a></p>
+<p>有两种配置方式：</p>
+<ol>
+<li>属性配置，包括全局和实例；</li>
+<li>代码配置，也包括全局和实例。</li>
+</ol>
+<p>优先级：实例&gt;全局，属性&gt;代码</p>
+<p>属性总是优先的，可以设置feign.client.default-to-properties为false，使得代码配置优先。</p>
+<p>全局属性配置名默认是default，可以设置feign.client.default-config为其他名字。</p>
+<h4 id="属性配置">属性配置</h4>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">feign:</span></span><br><span class="line"><span class="attr">  hystrix:</span></span><br><span class="line"><span class="attr">    enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">  client:</span></span><br><span class="line"><span class="attr">    config:</span></span><br><span class="line">      <span class="comment"># 全局配置</span></span><br><span class="line"><span class="attr">      default:</span></span><br><span class="line"><span class="attr">        connectTimeout:</span> <span class="number">5000</span></span><br><span class="line"><span class="attr">        readTimeout:</span> <span class="number">5000</span>  </span><br><span class="line">      <span class="comment"># 实例配置，feignName即@feignclient中的value，也就是服务名</span></span><br><span class="line"><span class="attr">      feignName:</span></span><br><span class="line"><span class="attr">        connectTimeout:</span> <span class="number">5000</span></span><br><span class="line"><span class="attr">        readTimeout:</span> <span class="number">5000</span></span><br></pre></td></tr></table></figure>
+<h4 id="代码配置">代码配置</h4>
+<h5 id="全局代码配置">全局代码配置</h5>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.microservice2;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.cloud.openfeign.support.SpringMvcContract;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Bean;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> feign.Request;</span><br><span class="line"><span class="keyword">import</span> feign.Retryer;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FeignClientConfiguration</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> Request.<span class="function">Options <span class="title">feignRequestOptions</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 默认连接超时10秒，读取超时60秒</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> Request.Options();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 默认重试是关闭的</span></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Retryer <span class="title">feignRetry</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 默认重试5次，首次间隔100毫秒，最大间隔1秒</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> Retryer.Default();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.microservice2;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.SpringApplication;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;</span><br><span class="line"><span class="keyword">import</span> org.springframework.cloud.client.discovery.EnableDiscoveryClient;</span><br><span class="line"><span class="keyword">import</span> org.springframework.cloud.openfeign.EnableFeignClients;</span><br><span class="line"></span><br><span class="line"><span class="meta">@SpringBootApplication</span></span><br><span class="line"><span class="meta">@EnableDiscoveryClient</span> <span class="comment">//开启注册服务</span></span><br><span class="line"><span class="meta">@EnableFeignClients</span>(defaultConfiguration = FeignClientConfiguration.class) <span class="comment">//开启feign消费服务</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DemoApplication</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		SpringApplication.run(DemoApplication.class, args);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="实例代码配置">实例代码配置</h5>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.microservice2;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.cloud.openfeign.FeignClient;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.RequestMapping;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.RequestMethod;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.bind.annotation.RequestParam;</span><br><span class="line"></span><br><span class="line"><span class="meta">@FeignClient</span>(value = <span class="string">"microservice1"</span>, fallback = HelloServiceHystric.class, configuration = FeignClientConfiguration.class) <span class="comment">// 访问微服务1，指定断路器类</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">HelloService</span> </span>&#123;</span><br><span class="line">    <span class="meta">@RequestMapping</span>(value = <span class="string">"/hello"</span>, method = RequestMethod.GET)</span><br><span class="line">    <span class="function">String <span class="title">hello</span><span class="params">(@RequestParam(value = <span class="string">"name"</span>)</span> String name)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="hystrix">hystrix</h3>
+<p><a href="https://github.com/Netflix/Hystrix/wiki/Configuration" target="_blank" rel="noopener">官方参考</a></p>
+<p>hystrix有四种配置方式：</p>
+<ol>
+<li>全局代码默认属性；</li>
+<li>全局属性配置；</li>
+<li>实例代码配置；</li>
+<li>实例属性配置。</li>
+</ol>
+<p>优先级：1&lt;2&lt;3&lt;4</p>
+<p>和feign一样，也是属性优先代码，实例优先全局。</p>
+<h4 id="属性配置-v2">属性配置</h4>
+   <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">hystrix:</span></span><br><span class="line"><span class="attr">  command:</span></span><br><span class="line">    <span class="comment">#全局默认配置</span></span><br><span class="line"><span class="attr">    default:</span></span><br><span class="line">      <span class="comment">#线程隔离相关</span></span><br><span class="line"><span class="attr">      execution:</span></span><br><span class="line"><span class="attr">        timeout:</span></span><br><span class="line">          <span class="comment">#是否给方法执行设置超时时间，默认为true。一般我们不要改。</span></span><br><span class="line"><span class="attr">          enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">        isolation:</span></span><br><span class="line">          <span class="comment">#配置请求隔离的方式，这里是默认的线程池方式。还有一种信号量的方式semaphore。</span></span><br><span class="line"><span class="attr">          strategy:</span> <span class="string">THREAD</span></span><br><span class="line"><span class="attr">          thread:</span></span><br><span class="line">            <span class="comment">#方式执行的超时时间，默认为1000毫秒，在实际场景中需要根据情况设置</span></span><br><span class="line"><span class="attr">            timeoutInMilliseconds:</span> <span class="number">10000</span></span><br><span class="line">    <span class="comment"># 实例配置</span></span><br><span class="line"><span class="attr">    HystrixCommandKey:</span></span><br><span class="line"><span class="attr">      execution:</span></span><br><span class="line"><span class="attr">        timeout:</span></span><br><span class="line"><span class="attr">          enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">        isolation:</span></span><br><span class="line"><span class="attr">          strategy:</span> <span class="string">THREAD</span></span><br><span class="line"><span class="attr">          thread:</span></span><br><span class="line"><span class="attr">            timeoutInMilliseconds:</span> <span class="number">10000</span></span><br></pre></td></tr></table></figure>
+<h4 id="代码配置-v2">代码配置</h4>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="meta">@RefreshScope</span> <span class="comment">// 开启配置更新</span></span><br><span class="line"><span class="meta">@RestController</span></span><br><span class="line"><span class="meta">@Slf</span>4j</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HelloController</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Value</span>(<span class="string">"$&#123;serviceName&#125;"</span>) <span class="comment">// 读配置文件的这个属性</span></span><br><span class="line">    <span class="keyword">private</span> String serviceName;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@RequestMapping</span>(<span class="string">"/hello"</span>)</span><br><span class="line">    <span class="meta">@HystrixCommand</span>(fallbackMethod = <span class="string">"helloError"</span>, commandProperties = &#123;</span><br><span class="line">            <span class="meta">@HystrixProperty</span>(name = <span class="string">"execution.isolation.thread.timeoutInMilliseconds"</span>, value = <span class="string">"4000"</span>) &#125;) <span class="comment">// 指定断路器方法，断路器监控用</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">hello</span><span class="params">(HttpServletRequest request, @RequestParam(value = <span class="string">"name"</span>, defaultValue = <span class="string">"Hugo"</span>)</span> String name)</span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        log.info(<span class="string">"ServerName:&#123;&#125; time:&#123;&#125;"</span>, request.getServerName(),</span><br><span class="line">                DateFormatUtils.format(<span class="keyword">new</span> Date(), <span class="string">"yyyyMMdd HH:mm:ss"</span>));</span><br><span class="line">        TimeUnit.SECONDS.sleep(<span class="number">4</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"hello "</span> + name + <span class="string">", my name is "</span> + serviceName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">helloError</span><span class="params">(HttpServletRequest request, String name)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"microservice1 hystrix,"</span> + name + <span class="string">"!"</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="feign中的hystrix怎么配置">feign中的hystrix怎么配置</h4>
+<p>只能通过属性设置，那么commandkey是什么呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.microservice2;</span><br><span class="line"></span><br><span class="line"><span class="meta">@FeignClient</span>(value = <span class="string">"microservice1"</span>, fallback = HelloServiceHystric.class, configuration = FeignClientConfiguration.class) <span class="comment">// 访问微服务1，指定断路器类</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">HelloService</span> </span>&#123;</span><br><span class="line">    <span class="meta">@RequestMapping</span>(value = <span class="string">"/hello"</span>, method = RequestMethod.GET)</span><br><span class="line">    <span class="function">String <span class="title">hello</span><span class="params">(@RequestParam(value = <span class="string">"name"</span>)</span> String name)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上例中默认行为如下，groupkey为&quot;microservice1&quot;，commandkey为&quot;HelloService#hello(String)&quot;，threadpoolkey为null。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">SetterFactory</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Returns a hystrix setter appropriate for the given target and method</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  HystrixCommand.<span class="function">Setter <span class="title">create</span><span class="params">(Target&lt;?&gt; target, Method method)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Default behavior is to derive the group key from &#123;<span class="doctag">@link</span> Target#name()&#125; and the command key from</span></span><br><span class="line"><span class="comment">   * &#123;<span class="doctag">@link</span> Feign#configKey(Class, Method)&#125;.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">Default</span> <span class="keyword">implements</span> <span class="title">SetterFactory</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> HystrixCommand.<span class="function">Setter <span class="title">create</span><span class="params">(Target&lt;?&gt; target, Method method)</span> </span>&#123;</span><br><span class="line">      String groupKey = target.name();</span><br><span class="line">      String commandKey = Feign.configKey(target.type(), method);</span><br><span class="line">      <span class="keyword">return</span> HystrixCommand.Setter</span><br><span class="line">          .withGroupKey(HystrixCommandGroupKey.Factory.asKey(groupKey))</span><br><span class="line">          .andCommandKey(HystrixCommandKey.Factory.asKey(commandKey));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Feign</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">configKey</span><span class="params">(Class targetType, Method method)</span> </span>&#123;</span><br><span class="line">    StringBuilder builder = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">    builder.append(targetType.getSimpleName());</span><br><span class="line">    builder.append(<span class="string">'#'</span>).append(method.getName()).append(<span class="string">'('</span>);</span><br><span class="line">    <span class="keyword">for</span> (Type param : method.getGenericParameterTypes()) &#123;</span><br><span class="line">      param = Types.resolve(targetType, targetType, param);</span><br><span class="line">      builder.append(Types.getRawType(param).getSimpleName()).append(<span class="string">','</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (method.getParameterTypes().length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">      builder.deleteCharAt(builder.length() - <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> builder.append(<span class="string">')'</span>).toString();</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>所以这样设置：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">hystrix:</span></span><br><span class="line"><span class="attr">  command:</span></span><br><span class="line">    <span class="string">HelloService#hello(String):</span></span><br><span class="line"><span class="attr">      execution:</span></span><br><span class="line"><span class="attr">        timeout:</span></span><br><span class="line"><span class="attr">          enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">        isolation:</span></span><br><span class="line"><span class="attr">          strategy:</span> <span class="string">THREAD</span></span><br><span class="line"><span class="attr">          thread:</span></span><br><span class="line"><span class="attr">            timeoutInMilliseconds:</span> <span class="number">10000</span></span><br></pre></td></tr></table></figure>
+<p>也可以改变上述commandkey的默认行为：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.microservice2;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.lang.reflect.Method;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.netflix.hystrix.HystrixCommand;</span><br><span class="line"><span class="keyword">import</span> com.netflix.hystrix.HystrixCommandGroupKey;</span><br><span class="line"><span class="keyword">import</span> com.netflix.hystrix.HystrixCommandKey;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Bean;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> feign.Target;</span><br><span class="line"><span class="keyword">import</span> feign.hystrix.SetterFactory;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">FeignClientConfiguration</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> SetterFactory <span class="title">feignHystrixSetter</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> MySetterFactory();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MySetterFactory</span> <span class="keyword">implements</span> <span class="title">SetterFactory</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> HystrixCommand.<span class="function">Setter <span class="title">create</span><span class="params">(Target&lt;?&gt; target, Method method)</span> </span>&#123;</span><br><span class="line">      String groupKey = target.name();</span><br><span class="line">      String commandKey = target.type().getName();</span><br><span class="line">      <span class="keyword">return</span> HystrixCommand.Setter</span><br><span class="line">          .withGroupKey(HystrixCommandGroupKey.Factory.asKey(groupKey))</span><br><span class="line">          .andCommandKey(HystrixCommandKey.Factory.asKey(commandKey));</span><br><span class="line">    &#125;    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样commandkey就会变成&quot;com.example.microservice2.HelloService&quot;。</p>
+<h3 id="ribbon">ribbon</h3>
+<p><a href="https://github.com/Netflix/ribbon/wiki/Getting-Started" target="_blank" rel="noopener">官方参考</a></p>
+<p>ribbon只有属性配置，同样存在全局和实例配置，格式如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;clientName&gt;.&lt;nameSpace&gt;.&lt;propertyName&gt;=&lt;value&gt;</span><br></pre></td></tr></table></figure>
+<p>nameSpace是可配置的，默认为ribbon。clientName可为远端服务名，即@feignclient的value，空表示全局配置。</p>
+   <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 全局配置</span></span><br><span class="line"><span class="attr">ribbon:</span></span><br><span class="line"> <span class="comment"># 服务最大重试次数,不包含第一次请求，默认0</span></span><br><span class="line"><span class="attr"> MaxAutoRetries:</span> <span class="number">5</span></span><br><span class="line"> <span class="comment"># 负载均衡切换次数,如果服务注册列表小于 nextServer count 那么会循环请求  A &gt; B &gt;　A，默认1</span></span><br><span class="line"><span class="attr"> MaxAutoRetriesNextServer:</span> <span class="number">3</span></span><br><span class="line"> <span class="comment">#是否所有操作都进行重试</span></span><br><span class="line"><span class="attr"> OkToRetryOnAllOperations:</span> <span class="literal">false</span></span><br><span class="line"> <span class="comment">#连接超时时间，单位为毫秒，默认2秒</span></span><br><span class="line"><span class="attr"> ConnectTimeout:</span> <span class="number">3000</span></span><br><span class="line"> <span class="comment">#读取的超时时间，单位为毫秒，默认5秒</span></span><br><span class="line"><span class="attr"> ReadTimeout:</span> <span class="number">3000</span></span><br><span class="line"><span class="comment"># 实例配置</span></span><br><span class="line"><span class="attr">clientName:</span></span><br><span class="line"><span class="attr">  ribbon:</span></span><br><span class="line"><span class="attr">   MaxAutoRetries:</span> <span class="number">5</span></span><br><span class="line"><span class="attr">   MaxAutoRetriesNextServer:</span> <span class="number">3</span></span><br><span class="line"><span class="attr">   OkToRetryOnAllOperations:</span> <span class="literal">false</span></span><br><span class="line"><span class="attr">   ConnectTimeout:</span> <span class="number">3000</span></span><br><span class="line"><span class="attr">   ReadTimeout:</span> <span class="number">3000</span></span><br></pre></td></tr></table></figure>
+<h2 id="超时时间关系">超时时间关系</h2>
+<h3 id="feign超时">feign超时</h3>
+<p>feign可以设置自身超时，也可以设置ribbon超时，那么它们的关系是怎么样的？看feign代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">LoadBalancerFeignClient</span> <span class="keyword">implements</span> <span class="title">Client</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">final</span> Request.Options DEFAULT_OPTIONS = <span class="keyword">new</span> Request.Options();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="function">IClientConfig <span class="title">getClientConfig</span><span class="params">(Request.Options options, String clientName)</span> </span>&#123;</span><br><span class="line">		IClientConfig requestConfig;</span><br><span class="line">		<span class="keyword">if</span> (options == DEFAULT_OPTIONS) &#123;</span><br><span class="line">			requestConfig = <span class="keyword">this</span>.clientFactory.getClientConfig(clientName);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			requestConfig = <span class="keyword">new</span> FeignOptionsClientConfig(options);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> requestConfig;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果没有设置过feign超时，也就是等于默认值的时候，就会读取ribbon的配置，使用ribbon的超时时间和重试设置。否则使用feign自身的设置。两者是二选一的，且feign优先。</p>
+<ul>
+<li>如果设置的feign的超时，则超时时间大概是Retryer.Default.maxAttempts*(ConnectTimeout+ReadTimeout)</li>
+<li>如果仅设置了ribbon，则超时时间大概是(ConnectTimeout+ReadTimeout)*(MaxAutoRetries+1)*(MaxAutoRetriesNextServer+1)；</li>
+</ul>
+<p>建议使用ribbon超时设置。</p>
+<h3 id="feign重试和ribbon重试">feign重试和ribbon重试</h3>
+<p>feign自身重试目前只有一个简单的实现Retryer.Default，包含三个属性：</p>
+<ul>
+<li>maxAttempts：重试次数，包含第一次</li>
+<li>period：重试初始间隔时间，单位毫秒</li>
+<li>maxPeriod：重试最大间隔时间，单位毫秒</li>
+</ul>
+<p>重试间隔算法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Retryer</span> <span class="keyword">extends</span> <span class="title">Cloneable</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="class"><span class="keyword">class</span> <span class="title">Default</span> <span class="keyword">implements</span> <span class="title">Retryer</span> </span>&#123;</span><br><span class="line">      </span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Calculates the time interval to a retry attempt. &lt;br&gt;</span></span><br><span class="line"><span class="comment">     * The interval increases exponentially with each attempt, at a rate of nextInterval *= 1.5</span></span><br><span class="line"><span class="comment">     * (where 1.5 is the backoff factor), to the maximum interval.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> time in nanoseconds from now until the next attempt.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">long</span> <span class="title">nextMaxInterval</span><span class="params">()</span> </span>&#123;</span><br><span class="line">      <span class="keyword">long</span> interval = (<span class="keyword">long</span>) (period * Math.pow(<span class="number">1.5</span>, attempt - <span class="number">1</span>));</span><br><span class="line">      <span class="keyword">return</span> interval &gt; maxPeriod ? maxPeriod : interval;</span><br><span class="line">    &#125;</span><br><span class="line">      </span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>第一次重试间隔period，第二次period*1.5，第三次period*1.5*1.5，…，最大值不超过maxPeriod。</p>
+<p>和ribbon的重试相比：</p>
+<ul>
+<li>重试次数包含了首次；</li>
+<li>不能设置多实例服务切换；</li>
+<li>重试有一个延迟时间。</li>
+</ul>
+<h3 id="feign超时和hystrix超时">feign超时和hystrix超时</h3>
+<p>hystrix的超时时间要大于feign的，否则没有等到feign超时，hystrix就fallback了，特别是重试机制会无法起作用。</p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2020/03/23/029-hystrix-ribbon-feign-relationship/" title="深入理解feign、ribbon和hystrix三者的关系及超时配置">http://zhongpan.tech/2020/03/23/029-hystrix-ribbon-feign-relationship/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/hystrix/" rel="tag"><i class="fa fa-tag"></i> hystrix</a>
+            
+              <a href="/tags/ribbon/" rel="tag"><i class="fa fa-tag"></i> ribbon</a>
+            
+              <a href="/tags/feign/" rel="tag"><i class="fa fa-tag"></i> feign</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/03/09/028-fix-baidu-seo-of-github-pages/" rel="next" title="解决github pages无法被baidu抓取页面问题">
+                  <i class="fa fa-chevron-left"></i> 解决github pages无法被baidu抓取页面问题
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2020/03/27/030-debug-springmvc-in-vscode/" rel="prev" title="vscode调试springmvc应用">
+                  vscode调试springmvc应用 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#三者关系"><span class="nav-number">1.</span> <span class="nav-text">三者关系</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#超时相关配置"><span class="nav-number">2.</span> <span class="nav-text">超时相关配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#feign"><span class="nav-number">2.1.</span> <span class="nav-text">feign</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#属性配置"><span class="nav-number">2.1.1.</span> <span class="nav-text">属性配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#代码配置"><span class="nav-number">2.1.2.</span> <span class="nav-text">代码配置</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#全局代码配置"><span class="nav-number">2.1.2.1.</span> <span class="nav-text">全局代码配置</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#实例代码配置"><span class="nav-number">2.1.2.2.</span> <span class="nav-text">实例代码配置</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#hystrix"><span class="nav-number">2.2.</span> <span class="nav-text">hystrix</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#属性配置-v2"><span class="nav-number">2.2.1.</span> <span class="nav-text">属性配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#代码配置-v2"><span class="nav-number">2.2.2.</span> <span class="nav-text">代码配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#feign中的hystrix怎么配置"><span class="nav-number">2.2.3.</span> <span class="nav-text">feign中的hystrix怎么配置</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ribbon"><span class="nav-number">2.3.</span> <span class="nav-text">ribbon</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#超时时间关系"><span class="nav-number">3.</span> <span class="nav-text">超时时间关系</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#feign超时"><span class="nav-number">3.1.</span> <span class="nav-text">feign超时</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#feign重试和ribbon重试"><span class="nav-number">3.2.</span> <span class="nav-text">feign重试和ribbon重试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#feign超时和hystrix超时"><span class="nav-number">3.3.</span> <span class="nav-text">feign超时和hystrix超时</span></a></li></ol></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

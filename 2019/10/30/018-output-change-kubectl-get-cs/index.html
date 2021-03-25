@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="喜欢尝鲜的同学可能会注意到最新的kubernetes在执行kubectl get cs时输出内容有一些变化，以前是这样的： 12345&amp;gt; kubectl get componentstatusesNAME                 STATUS    MESSAGE             ERRORcontroller-manager   Healthy   okscheduler">
+<meta name="keywords" content="k8s,go template">
+<meta property="og:type" content="article">
+<meta property="og:title" content="什么是kubernetes服务端打印">
+<meta property="og:url" content="http://zhongpan.tech/2019/10/30/018-output-change-kubectl-get-cs/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="喜欢尝鲜的同学可能会注意到最新的kubernetes在执行kubectl get cs时输出内容有一些变化，以前是这样的： 12345&amp;gt; kubectl get componentstatusesNAME                 STATUS    MESSAGE             ERRORcontroller-manager   Healthy   okscheduler">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://vipkshttp0.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/67e99cd0-ddd9-404b-be11-74d59e8dd302/index_files/image-20191031124543589.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.463Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="什么是kubernetes服务端打印">
+<meta name="twitter:description" content="喜欢尝鲜的同学可能会注意到最新的kubernetes在执行kubectl get cs时输出内容有一些变化，以前是这样的： 12345&amp;gt; kubectl get componentstatusesNAME                 STATUS    MESSAGE             ERRORcontroller-manager   Healthy   okscheduler">
+<meta name="twitter:image" content="http://vipkshttp0.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/67e99cd0-ddd9-404b-be11-74d59e8dd302/index_files/image-20191031124543589.png">
+  <link rel="canonical" href="http://zhongpan.tech/2019/10/30/018-output-change-kubectl-get-cs/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>什么是kubernetes服务端打印 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2019/10/30/018-output-change-kubectl-get-cs/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">什么是kubernetes服务端打印
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-10-30 09:53:51" itemprop="dateCreated datePublished" datetime="2019-10-30T09:53:51+08:00">2019-10-30</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>喜欢尝鲜的同学可能会注意到最新的kubernetes在执行kubectl get cs时输出内容有一些变化，以前是这样的：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;</span><span class="bash"> kubectl get componentstatuses</span></span><br><span class="line">NAME                 STATUS    MESSAGE             ERROR</span><br><span class="line">controller-manager   Healthy   ok</span><br><span class="line">scheduler            Healthy   ok</span><br><span class="line">etcd-0               Healthy   &#123;"health":"true"&#125;</span><br></pre></td></tr></table></figure>
+<p>现在变成了：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;</span><span class="bash"> kubectl get componentstatuses</span></span><br><span class="line">NAME                 Age    </span><br><span class="line">controller-manager   &lt;unknown&gt;</span><br><span class="line">scheduler            &lt;unknown&gt;</span><br><span class="line">etcd-0               &lt;unknown&gt;</span><br></pre></td></tr></table></figure>
+<p>起初可能会以为集群部署有问题，通过kubectl get cs -o yaml发现status、message等信息都有，只是没有打印出来。原来是kubectl get cs的输出格式有变化，那么为什么会有此变化，我们来一探究竟。</p>
+<a id="more"></a>
+<h2 id="定位问题原因">定位问题原因</h2>
+<p>尝试之前的版本，发现1.15还是正常的，<a href="http://xn--componentstatusesk8s-h975ara809x97bj78ant2a339aqu9gofra8fkya9153nmib.io/kubernetes/pkg/printers/internalversion/printers.go%E4%B8%AD%EF%BC%8C%E5%85%B6%E4%B8%AD%E7%9A%84AddHandlers%E6%96%B9%E6%B3%95%E8%B4%9F%E8%B4%A3%E6%8A%8A%E5%90%84%E7%A7%8D%E8%B5%84%E6%BA%90%E7%9A%84%E6%89%93%E5%8D%B0%E5%87%BD%E6%95%B0%E6%B3%A8%E5%86%8C%E8%BF%9B%E6%9D%A5%E3%80%82" target="_blank" rel="noopener">调试代码发现对componentstatuses的打印代码在k8s.io/kubernetes/pkg/printers/internalversion/printers.go中，其中的AddHandlers方法负责把各种资源的打印函数注册进来。</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// AddHandlers adds print handlers for default Kubernetes types dealing with internal versions.</span></span><br><span class="line"><span class="comment">// <span class="doctag">TODO:</span> handle errors from Handler</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">AddHandlers</span><span class="params">(h printers.PrintHandler)</span></span> &#123;</span><br><span class="line">......</span><br><span class="line">	componentStatusColumnDefinitions := []metav1beta1.TableColumnDefinition&#123;</span><br><span class="line">		&#123;Name: <span class="string">"Name"</span>, Type: <span class="string">"string"</span>, Format: <span class="string">"name"</span>, Description: metav1.ObjectMeta&#123;&#125;.SwaggerDoc()[<span class="string">"name"</span>]&#125;,</span><br><span class="line">		&#123;Name: <span class="string">"Status"</span>, Type: <span class="string">"string"</span>, Description: <span class="string">"Status of the component conditions"</span>&#125;,</span><br><span class="line">		&#123;Name: <span class="string">"Message"</span>, Type: <span class="string">"string"</span>, Description: <span class="string">"Message of the component conditions"</span>&#125;,</span><br><span class="line">		&#123;Name: <span class="string">"Error"</span>, Type: <span class="string">"string"</span>, Description: <span class="string">"Error of the component conditions"</span>&#125;,</span><br><span class="line">	&#125;</span><br><span class="line">	h.TableHandler(componentStatusColumnDefinitions, printComponentStatus)</span><br><span class="line">	h.TableHandler(componentStatusColumnDefinitions, printComponentStatusList)</span><br></pre></td></tr></table></figure>
+<p><a href="http://xn--AddHandlersk8s-by8vk1glr6f6z3f5nfuy4j.io/kubernetes/pkg/kubectl/cmd/get/humanreadable_flags.go(%E6%AD%A3%E5%9C%A8%E8%BF%81%E7%A7%BB%E5%88%B0staging%E4%B8%AD%EF%BC%8C%E5%A6%82%E6%9E%9C%E6%89%BE%E4%B8%8D%E5%88%B0%E5%B0%B1%E5%8E%BBstaging%E4%B8%AD%E6%89%BE)%E4%B8%AD%EF%BC%8C%E5%A6%82%E4%B8%8B32%E8%A1%8C%E4%BD%8D%E7%BD%AE%EF%BC%9A" target="_blank" rel="noopener">对AddHandlers的调用位于k8s.io/kubernetes/pkg/kubectl/cmd/get/humanreadable_flags.go(正在迁移到staging中，如果找不到就去staging中找)中，如下32行位置：</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ToPrinter receives an outputFormat and returns a printer capable of</span></span><br><span class="line"><span class="comment">// handling human-readable output.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(f *HumanPrintFlags)</span> <span class="title">ToPrinter</span><span class="params">(outputFormat <span class="keyword">string</span>)</span> <span class="params">(printers.ResourcePrinter, error)</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(outputFormat) &gt; <span class="number">0</span> &amp;&amp; outputFormat != <span class="string">"wide"</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, genericclioptions.NoCompatiblePrinterError&#123;Options: f, AllowedFormats: f.AllowedFormats()&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	showKind := <span class="literal">false</span></span><br><span class="line">	<span class="keyword">if</span> f.ShowKind != <span class="literal">nil</span> &#123;</span><br><span class="line">		showKind = *f.ShowKind</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	showLabels := <span class="literal">false</span></span><br><span class="line">	<span class="keyword">if</span> f.ShowLabels != <span class="literal">nil</span> &#123;</span><br><span class="line">		showLabels = *f.ShowLabels</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	columnLabels := []<span class="keyword">string</span>&#123;&#125;</span><br><span class="line">	<span class="keyword">if</span> f.ColumnLabels != <span class="literal">nil</span> &#123;</span><br><span class="line">		columnLabels = *f.ColumnLabels</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	p := printers.NewTablePrinter(printers.PrintOptions&#123;</span><br><span class="line">		Kind:          f.Kind,</span><br><span class="line">		WithKind:      showKind,</span><br><span class="line">		NoHeaders:     f.NoHeaders,</span><br><span class="line">		Wide:          outputFormat == <span class="string">"wide"</span>,</span><br><span class="line">		WithNamespace: f.WithNamespace,</span><br><span class="line">		ColumnLabels:  columnLabels,</span><br><span class="line">		ShowLabels:    showLabels,</span><br><span class="line">	&#125;)</span><br><span class="line">	printersinternal.AddHandlers(p)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// TODO(juanvallejo): handle sorting here</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> p, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>查看humanreadable_flags.go文件的修改历史，发现是在2019.6.28日特意去掉了对内部对象的打印，影响版本从1.16之后。</p>
+<p><img src="http://vipkshttp0.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/67e99cd0-ddd9-404b-be11-74d59e8dd302/index_files/image-20191031124543589.png" alt></p>
+<h2 id="为什么修改">为什么修改</h2>
+<p>我没有查到官方的说明，在此做一些个人猜测，还原整个过程：</p>
+<ol>
+<li>
+<p>最初对api resource的表格打印都是在kubectl中实现</p>
+</li>
+<li>
+<p>这样对于其他客户端需要做重复的事情，而且可能实现的行为不一致，因此有必要将表格打印放到服务端，也就是apiserver中</p>
+</li>
+<li>
+<p>服务端打印的支持经过一个逐步的过程，所以客户端并没有完全去除，是同时支持的，kubectl判断服务端返回的Table就直接打印，否则使用具体对象的打印，<a href="http://xn--k8s-4w2e10bw0ci5w0b71cb786o0ja165bv2chs9dh8i6xfp5wda2658fjvb2v2c.io/kubernetes/pkg/printers/internalversion/printers.go%E6%9D%A5%E5%AE%9E%E7%8E%B0" target="_blank" rel="noopener">客户端和服务端对特定对象的打印都是调用k8s.io/kubernetes/pkg/printers/internalversion/printers.go来实现</a></p>
+</li>
+<li>
+<p>1.11版本将kubectl的命令行参数<code>--server-print</code>默认设置为true</p>
+</li>
+<li>
+<p>到了1.16版本，社区可能认为所有的对象都移到服务端了，这时就去除了客户端kubectl中的打印</p>
+</li>
+<li>
+<p>但实际上componentstatuses被遗漏了，那么为什么遗漏，可能主要是因为componentstatuses对象跟其他对象不一样，它是每次实时获取，而不是从缓存获取，其他对象，例如pod是从etcd获取，<a href="http://xn--k8s-198dm3txwgttixvap9so1xksbq91g8tw.io/kubernetes/pkg/registry/core/pod/storage/storage.go%E4%B8%AD%EF%BC%8C%E5%A6%82%E4%B8%8B15%E8%A1%8C%E4%BD%8D%E7%BD%AE%EF%BC%9A" target="_blank" rel="noopener">对结果的格式化定义在k8s.io/kubernetes/pkg/registry/core/pod/storage/storage.go中，如下15行位置：</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NewStorage returns a RESTStorage object that will work against pods.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewStorage</span><span class="params">(optsGetter generic.RESTOptionsGetter, k client.ConnectionInfoGetter, proxyTransport http.RoundTripper, podDisruptionBudgetClient policyclient.PodDisruptionBudgetsGetter)</span> <span class="title">PodStorage</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	store := &amp;genericregistry.Store&#123;</span><br><span class="line">		NewFunc:                  <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="title">runtime</span>.<span class="title">Object</span></span> &#123; <span class="keyword">return</span> &amp;api.Pod&#123;&#125; &#125;,</span><br><span class="line">		NewListFunc:              <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="title">runtime</span>.<span class="title">Object</span></span> &#123; <span class="keyword">return</span> &amp;api.PodList&#123;&#125; &#125;,</span><br><span class="line">		PredicateFunc:            pod.MatchPod,</span><br><span class="line">		DefaultQualifiedResource: api.Resource(<span class="string">"pods"</span>),</span><br><span class="line"></span><br><span class="line">		CreateStrategy:      pod.Strategy,</span><br><span class="line">		UpdateStrategy:      pod.Strategy,</span><br><span class="line">		DeleteStrategy:      pod.Strategy,</span><br><span class="line">		ReturnDeletedObject: <span class="literal">true</span>,</span><br><span class="line"></span><br><span class="line">		TableConvertor: printerstorage.TableConvertor&#123;TableGenerator: printers.NewTableGenerator().With(printersinternal.AddHandlers)&#125;,</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>componentstatuses没有用到真正的Storge，而它又相对不起眼，所以被遗漏了。</p>
+</li>
+</ol>
+<h2 id="暂时解决办法">暂时解决办法</h2>
+<p>如果希望打印和原来类似的内容，目前只有通过模板：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get cs -o=go-template='&#123;&#123;printf "|NAME|STATUS|MESSAGE|\n"&#125;&#125;&#123;&#123;range .items&#125;&#125;&#123;&#123;$name := .metadata.name&#125;&#125;&#123;&#123;range .conditions&#125;&#125;&#123;&#123;printf "|%s|%s|%s|\n" $name .status .message&#125;&#125;&#123;&#123;end&#125;&#125;&#123;&#123;end&#125;&#125;'</span><br></pre></td></tr></table></figure>
+<p>输出结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">|NAME|STATUS|MESSAGE|</span><br><span class="line">|controller-manager|True|ok|</span><br><span class="line">|scheduler|True|ok|</span><br><span class="line">|etcd-0|True|&#123;&quot;health&quot;:&quot;true&quot;&#125;|</span><br></pre></td></tr></table></figure>
+<h2 id="深入打印处理流程">深入打印处理流程</h2>
+<p>kubectl通过-o参数控制输出的格式，有yaml、json、模板和表格几种样式，上述问题是出在表格打印时，不加-o参数默认就是表格打印，下面我们详细分析一下kubectl get的打印输出过程。</p>
+<h3 id="kubectl">kubectl</h3>
+<p>kubectl <a href="http://xn--getk8s-rx8ig5ocugfoj8l7gxzd.io/kubernetes/pkg/kubectl/cmd/get/get.go%E4%B8%AD%EF%BC%8CRun%E5%AD%97%E6%AE%B5%E5%B0%B1%E6%98%AF%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E6%96%B9%E6%B3%95%EF%BC%9A" target="_blank" rel="noopener">get的代码入口在k8s.io/kubernetes/pkg/kubectl/cmd/get/get.go中，Run字段就是命令执行方法：</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewCmdGet</span><span class="params">(parent <span class="keyword">string</span>, f cmdutil.Factory, streams genericclioptions.IOStreams)</span> *<span class="title">cobra</span>.<span class="title">Command</span></span> &#123;</span><br><span class="line">......</span><br><span class="line">		Run: <span class="function"><span class="keyword">func</span><span class="params">(cmd *cobra.Command, args []<span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">			cmdutil.CheckErr(o.Complete(f, cmd, args))</span><br><span class="line">			cmdutil.CheckErr(o.Validate(cmd))</span><br><span class="line">			cmdutil.CheckErr(o.Run(f, cmd, args))</span><br><span class="line">		&#125;,</span><br><span class="line">......</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>Complete方法完成了Printer初始化，<a href="http://xn--k8s-xi9d47a.io/kubernetes/pkg/kubectl/cmd/get/get_flags.go%E4%B8%AD%EF%BC%9A" target="_blank" rel="noopener">位于k8s.io/kubernetes/pkg/kubectl/cmd/get/get_flags.go中：</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(f *PrintFlags)</span> <span class="title">ToPrinter</span><span class="params">()</span> <span class="params">(printers.ResourcePrinter, error)</span></span> &#123;</span><br><span class="line">......</span><br><span class="line">	<span class="keyword">if</span> p, err := f.HumanReadableFlags.ToPrinter(outputFormat); !genericclioptions.IsNoCompatiblePrinterError(err) &#123;</span><br><span class="line">		<span class="keyword">return</span> p, err</span><br><span class="line">	&#125;</span><br><span class="line">......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>不带-o参数时，上述方法返回的是f.HumanReadableFlags.ToPrinter(outputFormat)，最后返回的是HumanReadablePrinter对象，<a href="http://xn--k8s-xi9d47a.io/cli-runtime/pkg/printers/tableprinter.go%E4%B8%AD%EF%BC%9A" target="_blank" rel="noopener">位于k8s.io/cli-runtime/pkg/printers/tableprinter.go中：</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NewTablePrinter creates a printer suitable for calling PrintObj().</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewTablePrinter</span><span class="params">(options PrintOptions)</span> <span class="title">ResourcePrinter</span></span> &#123;</span><br><span class="line">	printer := &amp;HumanReadablePrinter&#123;</span><br><span class="line">		options: options,</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> printer</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>再回到命令执行主流程，Complete之后主要是Run，其中完成向apiserver发送http请求并打印结果的动作，在发送http请求前，有一个很重要的动作，加入服务端打印的header，服务端打印可以通过<code>--server-print</code>参数控制，从1.11默认为true，这样服务端如果支持转换就会返回metav1beta1.Table类型，置为false也可以禁用服务端打印：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(o *GetOptions)</span> <span class="title">transformRequests</span><span class="params">(req *rest.Request)</span></span> &#123;</span><br><span class="line">......</span><br><span class="line">	<span class="keyword">if</span> !o.ServerPrint || !o.IsHumanReadablePrinter &#123;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	group := metav1beta1.GroupName</span><br><span class="line">	version := metav1beta1.SchemeGroupVersion.Version</span><br><span class="line"></span><br><span class="line">	tableParam := fmt.Sprintf(<span class="string">"application/json;as=Table;v=%s;g=%s, application/json"</span>, version, group)</span><br><span class="line">	req.SetHeader(<span class="string">"Accept"</span>, tableParam)</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最后打印是调用的HumanReadablePrinter.PrintObj方法，先判断服务端如果返回的metav1beta1.Table类型就直接打印，其次如果是metav1.Status类型也有专门的处理器，最后就会到默认处理器：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(h *HumanReadablePrinter)</span> <span class="title">PrintObj</span><span class="params">(obj runtime.Object, output io.Writer)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">......</span><br><span class="line">	<span class="comment">// Parameter "obj" is a table from server; print it.</span></span><br><span class="line">	<span class="comment">// display tables following the rules of options</span></span><br><span class="line">	<span class="keyword">if</span> table, ok := obj.(*metav1beta1.Table); ok &#123;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> printTable(table, output, localOptions)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Could not find print handler for "obj"; use the default or status print handler.</span></span><br><span class="line">	<span class="comment">// Print with the default or status handler, and use the columns from the last time</span></span><br><span class="line">	<span class="keyword">var</span> handler *printHandler</span><br><span class="line">	<span class="keyword">if</span> _, isStatus := obj.(*metav1.Status); isStatus &#123;</span><br><span class="line">		handler = statusHandlerEntry</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		handler = defaultHandlerEntry</span><br><span class="line">	&#125;</span><br><span class="line">......</span><br><span class="line">	<span class="keyword">if</span> err := printRowsForHandlerEntry(output, handler, eventType, obj, h.options, includeHeaders); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">......</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>默认处理器会打印Name和Age两列，因为componetstatuses是实时获取，没有存储在etcd中，没有创建时间，所以Age打印出来就是unknown。</p>
+<h3 id="apiserver">apiserver</h3>
+<p>再来看服务端的处理流程，<a href="http://xn--apiserverRESTk8s-qb5z177cnuod8i8yn80b248fl3ad710a.io/apiserver/pkg/endpoints/handlers%E7%9B%AE%E5%BD%95%E4%B8%8B%EF%BC%8Ckubectl" target="_blank" rel="noopener">apiserver对外提供REST接口实现在k8s.io/apiserver/pkg/endpoints/handlers目录下，kubectl</a> get cs会进入get.go中ListResource方法，如下列出关键的三个步骤：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">ListResource</span><span class="params">(r rest.Lister, rw rest.Watcher, scope *RequestScope, forceWatch <span class="keyword">bool</span>, minRequestTimeout time.Duration)</span> <span class="title">http</span>.<span class="title">HandlerFunc</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> <span class="function"><span class="keyword">func</span><span class="params">(w http.ResponseWriter, req *http.Request)</span></span> &#123;</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">		outputMediaType, _, err := negotiation.NegotiateOutputMediaType(req, scope.Serializer, scope)</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">		result, err := r.List(ctx, &amp;opts)</span><br><span class="line">......</span><br><span class="line">		transformResponseObject(ctx, scope, trace, req, w, http.StatusOK, outputMediaType, result)</span><br><span class="line">......</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>NegotiateOutputMediaType中根据客户端的请求header设置服务端的一些行为，包括是否服务端打印；r.List从Storage层获取资源数据，<a href="http://xn--k8s-g59dx1h2vmn6hq55c.io/kubernetes/pkg/registry%E4%B8%8B%EF%BC%9BtransformResponseObject%E5%B0%86%E7%BB%93%E6%9E%9C%E8%BF%94%E5%9B%9E%E7%BB%99%E5%AE%A2%E6%88%B7%E7%AB%AF%E3%80%82" target="_blank" rel="noopener">具体实现在k8s.io/kubernetes/pkg/registry下；transformResponseObject将结果返回给客户端。</a></p>
+<p>先说transformResponseObject，其中就会根据NegotiateOutputMediaType返回的outputMediaType的Convert字段判断是否转为换目标类型，如果为Table就会将r.List返回的具体资源类型转换为Table类型：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">doTransformObject</span><span class="params">(ctx context.Context, obj runtime.Object, opts <span class="keyword">interface</span>&#123;&#125;, mediaType negotiation.MediaTypeOptions, scope *RequestScope, req *http.Request)</span> <span class="params">(runtime.Object, error)</span></span> &#123;</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">	<span class="keyword">switch</span> target := mediaType.Convert; &#123;</span><br><span class="line">	<span class="keyword">case</span> target == <span class="literal">nil</span>:</span><br><span class="line">		<span class="keyword">return</span> obj, <span class="literal">nil</span>        </span><br><span class="line">......</span><br><span class="line">	<span class="keyword">case</span> target.Kind == <span class="string">"Table"</span>:</span><br><span class="line">		options, ok := opts.(*metav1beta1.TableOptions)</span><br><span class="line">		<span class="keyword">if</span> !ok &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span>, fmt.Errorf(<span class="string">"unexpected TableOptions, got %T"</span>, opts)</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> asTable(ctx, obj, options, scope, target.GroupVersion())</span><br><span class="line">......g</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上述asTable最终调用scope.TableConvertor.ConvertToTable完成表格转换工作，在本文的问题中，就是因为mediaType.Convert为空而没有触发这个转换，那么为什么为空呢，问题就出在NegotiateOutputMediaType，<a href="http://xn--k8s-xy9d44lf9rh4sn2ztds0h4a.io/apiserver/pkg/endpoints/handlers/rest.go%E7%9A%84AllowsMediaTypeTransform%E6%96%B9%E6%B3%95%EF%BC%8C%E6%98%AF%E5%9B%A0%E4%B8%BAscope.TableConvertor%E4%B8%BA%E7%A9%BA%EF%BC%8C%E6%9C%80%E7%BB%88%E8%BD%AC%E6%8D%A2%E4%B8%BATable%E4%B9%9F%E6%98%AF%E8%B0%83%E7%94%A8%E7%9A%84%E5%AE%83%EF%BC%9A" target="_blank" rel="noopener">它最终会调用到k8s.io/apiserver/pkg/endpoints/handlers/rest.go的AllowsMediaTypeTransform方法，是因为scope.TableConvertor为空，最终转换为Table也是调用的它：</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">func (scope *RequestScope) AllowsMediaTypeTransform(mimeType, mimeSubType string, gvk *schema.GroupVersionKind) bool &#123;</span><br><span class="line">......</span><br><span class="line">	if gvk.GroupVersion() == metav1beta1.SchemeGroupVersion || gvk.GroupVersion() == metav1.SchemeGroupVersion &#123;</span><br><span class="line">		switch gvk.Kind &#123;</span><br><span class="line">		case &quot;Table&quot;:</span><br><span class="line">			return scope.TableConvertor != nil &amp;&amp;</span><br><span class="line">				mimeType == &quot;application&quot; &amp;&amp;</span><br><span class="line">				(mimeSubType == &quot;json&quot; || mimeSubType == &quot;yaml&quot;)</span><br><span class="line">......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>进一步跟踪，RequestScope是在apiserver初始化的时候创建的，每类资源一个，比如componentstatuses有一个全局的，pod有一个全局的，初始化的过程如下：</p>
+<p><a href="http://xn--apiserverk8s-g13tp4fz8e04dt0tbrl.io/kubernetes/pkg/master/master.go%E7%9A%84InstallLegacyAPI%E5%92%8CInstallAPIs%E6%96%B9%E6%B3%95%E4%B8%AD%EF%BC%8C%E5%89%8D%E8%80%85%E4%B8%BB%E8%A6%81%E9%92%88%E5%AF%B9%E4%B8%80%E4%BA%9B%E8%80%81%E7%9A%84%E8%B5%84%E6%BA%90%EF%BC%8C%E5%85%B7%E4%BD%93%E6%9C%89%E5%93%AA%E4%BA%9B%E8%A7%81%E4%B8%8B%E9%9D%A2%E7%9A%84NewLegacyRESTStorage%E6%96%B9%E6%B3%95%EF%BC%8C%E5%85%B6%E4%B8%AD%E5%B0%B1%E5%8C%85%E5%90%ABcomponentStatuses%EF%BC%8C%E5%85%B6%E4%BB%96%E8%B5%84%E6%BA%90%E9%80%9A%E8%BF%87InstallAPIs%E5%88%9D%E5%A7%8B%E5%8C%96%EF%BC%9A" target="_blank" rel="noopener">apiserver初始化入口在k8s.io/kubernetes/pkg/master/master.go的InstallLegacyAPI和InstallAPIs方法中，前者主要针对一些老的资源，具体有哪些见下面的NewLegacyRESTStorage方法，其中就包含componentStatuses，其他资源通过InstallAPIs初始化：</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// InstallLegacyAPI will install the legacy APIs for the restStorageProviders if they are enabled.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(m *Master)</span> <span class="title">InstallLegacyAPI</span><span class="params">(c *completedConfig, restOptionsGetter generic.RESTOptionsGetter, legacyRESTStorageProvider corerest.LegacyRESTStorageProvider)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	legacyRESTStorage, apiGroupInfo, err := legacyRESTStorageProvider.NewLegacyRESTStorage(restOptionsGetter)</span><br><span class="line">......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>初始化Storage：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line">func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generic.RESTOptionsGetter) (LegacyRESTStorage, genericapiserver.APIGroupInfo, error) &#123;</span><br><span class="line">	apiGroupInfo := genericapiserver.APIGroupInfo&#123;</span><br><span class="line">		PrioritizedVersions:          legacyscheme.Scheme.PrioritizedVersionsForGroup(&quot;&quot;),</span><br><span class="line">		VersionedResourcesStorageMap: map[string]map[string]rest.Storage&#123;&#125;,</span><br><span class="line">		Scheme:                       legacyscheme.Scheme,</span><br><span class="line">		ParameterCodec:               legacyscheme.ParameterCodec,</span><br><span class="line">		NegotiatedSerializer:         legacyscheme.Codecs,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line">	restStorageMap := map[string]rest.Storage&#123;</span><br><span class="line">		&quot;pods&quot;:             podStorage.Pod,</span><br><span class="line">		&quot;pods/attach&quot;:      podStorage.Attach,</span><br><span class="line">		&quot;pods/status&quot;:      podStorage.Status,</span><br><span class="line">		&quot;pods/log&quot;:         podStorage.Log,</span><br><span class="line">		&quot;pods/exec&quot;:        podStorage.Exec,</span><br><span class="line">		&quot;pods/portforward&quot;: podStorage.PortForward,</span><br><span class="line">		&quot;pods/proxy&quot;:       podStorage.Proxy,</span><br><span class="line">		&quot;pods/binding&quot;:     podStorage.Binding,</span><br><span class="line">		&quot;bindings&quot;:         podStorage.LegacyBinding,</span><br><span class="line"></span><br><span class="line">		&quot;podTemplates&quot;: podTemplateStorage,</span><br><span class="line"></span><br><span class="line">		&quot;replicationControllers&quot;:        controllerStorage.Controller,</span><br><span class="line">		&quot;replicationControllers/status&quot;: controllerStorage.Status,</span><br><span class="line"></span><br><span class="line">		&quot;services&quot;:        serviceRest,</span><br><span class="line">		&quot;services/proxy&quot;:  serviceRestProxy,</span><br><span class="line">		&quot;services/status&quot;: serviceStatusStorage,</span><br><span class="line"></span><br><span class="line">		&quot;endpoints&quot;: endpointsStorage,</span><br><span class="line"></span><br><span class="line">		&quot;nodes&quot;:        nodeStorage.Node,</span><br><span class="line">		&quot;nodes/status&quot;: nodeStorage.Status,</span><br><span class="line">		&quot;nodes/proxy&quot;:  nodeStorage.Proxy,</span><br><span class="line"></span><br><span class="line">		&quot;events&quot;: eventStorage,</span><br><span class="line"></span><br><span class="line">		&quot;limitRanges&quot;:                   limitRangeStorage,</span><br><span class="line">		&quot;resourceQuotas&quot;:                resourceQuotaStorage,</span><br><span class="line">		&quot;resourceQuotas/status&quot;:         resourceQuotaStatusStorage,</span><br><span class="line">		&quot;namespaces&quot;:                    namespaceStorage,</span><br><span class="line">		&quot;namespaces/status&quot;:             namespaceStatusStorage,</span><br><span class="line">		&quot;namespaces/finalize&quot;:           namespaceFinalizeStorage,</span><br><span class="line">		&quot;secrets&quot;:                       secretStorage,</span><br><span class="line">		&quot;serviceAccounts&quot;:               serviceAccountStorage,</span><br><span class="line">		&quot;persistentVolumes&quot;:             persistentVolumeStorage,</span><br><span class="line">		&quot;persistentVolumes/status&quot;:      persistentVolumeStatusStorage,</span><br><span class="line">		&quot;persistentVolumeClaims&quot;:        persistentVolumeClaimStorage,</span><br><span class="line">		&quot;persistentVolumeClaims/status&quot;: persistentVolumeClaimStatusStorage,</span><br><span class="line">		&quot;configMaps&quot;:                    configMapStorage,</span><br><span class="line">		</span><br><span class="line">		&quot;componentStatuses&quot;: componentstatus.NewStorage(componentStatusStorage&#123;c.StorageFactory&#125;.serversToValidate),</span><br><span class="line">	&#125;</span><br><span class="line">......</span><br><span class="line">	apiGroupInfo.VersionedResourcesStorageMap[&quot;v1&quot;] = restStorageMap</span><br><span class="line"></span><br><span class="line">	return restStorage, apiGroupInfo, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注册REST接口的handler，handler中包含RequestScope，RequestScope中的TableConvertor字段是从storage取出，也就是上述NewLegacyRESTStorage创建的资源对应的storage，例如componentStatuses，就是componentstatus.NewStorage(componentStatusStorage{c.StorageFactory}.serversToValidate)，提取的方法是类型断言storage.(rest.TableConvertor)，也就是storage要实现rest.TableConvertor接口，否则取出来为空：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(a *APIInstaller)</span> <span class="title">registerResourceHandlers</span><span class="params">(path <span class="keyword">string</span>, storage rest.Storage, ws *restful.WebService)</span> <span class="params">(*metav1.APIResource, error)</span></span> &#123;</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">	tableProvider, _ := storage.(rest.TableConvertor)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> apiResource metav1.APIResource</span><br><span class="line">......</span><br><span class="line">	reqScope := handlers.RequestScope&#123;</span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">		<span class="comment">// <span class="doctag">TODO:</span> Check for the interface on storage</span></span><br><span class="line">		TableConvertor: tableProvider,</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line">	<span class="keyword">for</span> _, action := <span class="keyword">range</span> actions &#123;</span><br><span class="line">......</span><br><span class="line">		<span class="keyword">switch</span> action.Verb &#123;</span><br><span class="line">......</span><br><span class="line">		<span class="keyword">case</span> <span class="string">"LIST"</span>: <span class="comment">// List all resources of a kind.</span></span><br><span class="line">			doc := <span class="string">"list objects of kind "</span> + kind</span><br><span class="line">			<span class="keyword">if</span> isSubresource &#123;</span><br><span class="line">				doc = <span class="string">"list "</span> + subresource + <span class="string">" of objects of kind "</span> + kind</span><br><span class="line">			&#125;</span><br><span class="line">			handler := metrics.InstrumentRouteFunc(action.Verb, group, version, resource, subresource, requestScope, metrics.APIServerComponent, restfulListResource(lister, watcher, reqScope, <span class="literal">false</span>, a.minRequestTimeout))</span><br><span class="line">......</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="comment">// Note: update GetAuthorizerAttributes() when adding a custom handler.</span></span><br><span class="line">	&#125;</span><br><span class="line">......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>具体看componentStatuses的storage，<a href="http://xn--k8s-lp6e.io/kubernetes/pkg/registry/core/componentstatus/rest.go%E4%B8%AD%EF%BC%8C%E7%A1%AE%E5%AE%9E%E6%B2%A1%E6%9C%89%E5%AE%9E%E7%8E%B0rest.TableConvertor%E6%8E%A5%E5%8F%A3%EF%BC%8C%E6%89%80%E4%BB%A5componentStatuses%E7%9A%84handler%E7%9A%84RequestScope%E4%B8%AD%E7%9A%84TableConvertor%E5%AD%97%E6%AE%B5%E5%B0%B1%E4%B8%BA%E7%A9%BA%EF%BC%8C%E6%9C%80%E7%BB%88%E5%AF%BC%E8%87%B4%E4%BA%86%E9%97%AE%E9%A2%98%EF%BC%9A" target="_blank" rel="noopener">在k8s.io/kubernetes/pkg/registry/core/componentstatus/rest.go中，确实没有实现rest.TableConvertor接口，所以componentStatuses的handler的RequestScope中的TableConvertor字段就为空，最终导致了问题：</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> REST <span class="keyword">struct</span> &#123;</span><br><span class="line">	GetServersToValidate <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="title">map</span>[<span class="title">string</span>]*<span class="title">Server</span>	</span></span><br><span class="line"><span class="function">&#125;</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">// <span class="title">NewStorage</span> <span class="title">returns</span> <span class="title">a</span> <span class="title">new</span> <span class="title">REST</span>.</span></span><br><span class="line"><span class="function"><span class="title">func</span> <span class="title">NewStorage</span><span class="params">(serverRetriever <span class="keyword">func</span>()</span> <span class="title">map</span>[<span class="title">string</span>]*<span class="title">Server</span>) *<span class="title">REST</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> &amp;REST&#123;</span><br><span class="line">		GetServersToValidate: serverRetriever,	</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="代码修复">代码修复</h2>
+<p>找到了根本原因之后，修复就比较简单了，就是storage需要实现rest.TableConvertor接口，<a href="http://xn--k8s-198d39ws9et9iulr.io/apiserver/pkg/registry/rest/rest.go%E4%B8%AD%EF%BC%9A" target="_blank" rel="noopener">接口定义在k8s.io/apiserver/pkg/registry/rest/rest.go中：</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> TableConvertor <span class="keyword">interface</span> &#123;</span><br><span class="line">	ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1beta1.Table, error)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>参照其他资源storage代码，<a href="http://xn--k8s-5n0el78g.io/kubernetes/pkg/registry/core/componentstatus/rest.go%E4%BB%A3%E7%A0%81%E5%A6%82%E4%B8%8B%EF%BC%8C%E9%97%AE%E9%A2%98%E5%BE%97%E5%88%B0%E8%A7%A3%E5%86%B3%EF%BC%8Ckubectl" target="_blank" rel="noopener">修改k8s.io/kubernetes/pkg/registry/core/componentstatus/rest.go代码如下，问题得到解决，kubectl</a> get cs打印出熟悉的表格，如果使用<code>kubectl get cs --server-print=false</code>仍会只打印Name、Age两列：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> REST <span class="keyword">struct</span> &#123;</span><br><span class="line">	GetServersToValidate <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="title">map</span>[<span class="title">string</span>]*<span class="title">Server</span>	</span></span><br><span class="line"><span class="function">	<span class="title">tableConvertor</span> <span class="title">printerstorage</span>.<span class="title">TableConvertor</span></span></span><br><span class="line"><span class="function">&#125;</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">// <span class="title">NewStorage</span> <span class="title">returns</span> <span class="title">a</span> <span class="title">new</span> <span class="title">REST</span>.</span></span><br><span class="line"><span class="function"><span class="title">func</span> <span class="title">NewStorage</span><span class="params">(serverRetriever <span class="keyword">func</span>()</span> <span class="title">map</span>[<span class="title">string</span>]*<span class="title">Server</span>) *<span class="title">REST</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> &amp;REST&#123;</span><br><span class="line">		GetServersToValidate: serverRetriever,	</span><br><span class="line">		tableConvertor: printerstorage.TableConvertor&#123;TableGenerator: printers.NewTableGenerator().With(printersinternal.AddHandlers)&#125;,	</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *REST)</span> <span class="title">ConvertToTable</span><span class="params">(ctx context.Context, object runtime.Object, tableOptions runtime.Object)</span> <span class="params">(*metav1beta1.Table, error)</span></span> &#123;</span><br><span class="line">	<span class="keyword">return</span> r.tableConvertor.ConvertToTable(ctx, object, tableOptions)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="最后">最后</h2>
+<p>本想提交一个PR给kubernetes，发现已经有人先一步<a href="https://github.com/kubernetes/kubernetes/pull/83066/commits" target="_blank" rel="noopener">提了</a>，解决方法和我一摸一样，只是上述tableConvertor字段是大写开头，我觉得小写更好，有点遗憾。而这个问题在2019.9.23已经有人<a href="https://github.com/kubernetes/kubernetes/issues/83024" target="_blank" rel="noopener">提出</a>，也就是1.16刚发布的时候，9.24就有人提了PR，解决速度非常之快，可见开源软件的优势以及k8s热度之高，有无数的开发者为其贡献力量，k8s就像聚光灯下的明星，无数双眼睛注目着。不过这个PR现在还没有合入主干，还在代码审查阶段，这个bug相对来讲不是很严重，所以优先级不那么高，要知道现在还有1097个PR。虽然最后有一点小遗憾，不过在解决问题的过程中对kubernetes的理解也更进一步，还是收获良多。在阅读代码的过程中，随处可见各种TODO，发现代码不断在重构，今天代码在这里，明天代码就搬到另一个地方了，k8s这么一个冉冉升起的新星，虽然从2017年起就成为容器编排的事实标准，并被广泛应用到生产环境，但它本身还在不断进化，还需不断完善。</p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2019/10/30/018-output-change-kubectl-get-cs/" title="什么是kubernetes服务端打印">http://zhongpan.tech/2019/10/30/018-output-change-kubectl-get-cs/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/k8s/" rel="tag"><i class="fa fa-tag"></i> k8s</a>
+            
+              <a href="/tags/go-template/" rel="tag"><i class="fa fa-tag"></i> go template</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/10/25/017-what-is-a-self-signed-certificate/" rel="next" title="CA证书和自签名证书">
+                  <i class="fa fa-chevron-left"></i> CA证书和自签名证书
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/11/12/019-access-pod-forbidden/" rel="prev" title="深入理解kubelet认证和授权">
+                  深入理解kubelet认证和授权 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#定位问题原因"><span class="nav-number">1.</span> <span class="nav-text">定位问题原因</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么修改"><span class="nav-number">2.</span> <span class="nav-text">为什么修改</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#暂时解决办法"><span class="nav-number">3.</span> <span class="nav-text">暂时解决办法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#深入打印处理流程"><span class="nav-number">4.</span> <span class="nav-text">深入打印处理流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#kubectl"><span class="nav-number">4.1.</span> <span class="nav-text">kubectl</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#apiserver"><span class="nav-number">4.2.</span> <span class="nav-text">apiserver</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代码修复"><span class="nav-number">5.</span> <span class="nav-text">代码修复</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最后"><span class="nav-number">6.</span> <span class="nav-text">最后</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

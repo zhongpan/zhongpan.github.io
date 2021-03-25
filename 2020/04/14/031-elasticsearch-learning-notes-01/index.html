@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="Elasticsearch目前的发展可谓如日中天，DBEngine上在搜索引擎领域位列第一，作为后来者热度远高于排第二、三的Splunk和Solr。Elasticsearch的创造者叫Shay Banon，最初是因为Lucence的接口使用困难，开发了一个库Compass，让Lucence更好用，2010年Shay Banon对Compass进行重写，把它变成一个高性能的、分布式的服务端软件，取名">
+<meta name="keywords" content="elasticsearch,kibana,metricbeat">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Elasticsearch学习笔记(一)-搭建环境">
+<meta property="og:url" content="http://zhongpan.tech/2020/04/14/031-elasticsearch-learning-notes-01/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="Elasticsearch目前的发展可谓如日中天，DBEngine上在搜索引擎领域位列第一，作为后来者热度远高于排第二、三的Splunk和Solr。Elasticsearch的创造者叫Shay Banon，最初是因为Lucence的接口使用困难，开发了一个库Compass，让Lucence更好用，2010年Shay Banon对Compass进行重写，把它变成一个高性能的、分布式的服务端软件，取名">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/26127623-8cc2-4f52-bd26-9a36673a3239.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/127ac116-87b1-4bff-b4fd-f6e35dc086e3.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/4b1883ba-45c5-4276-be81-c10b03f59b87.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/507d79b8-014a-4b7e-a496-80b8da02bf25.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/bd4167fa-d109-4de5-ad69-85729ddf5971.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/8ad51466-2dd8-4bb9-8f57-24feb19b8ff6.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/de40e031-6037-404a-80c7-708614114f1b.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.471Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Elasticsearch学习笔记(一)-搭建环境">
+<meta name="twitter:description" content="Elasticsearch目前的发展可谓如日中天，DBEngine上在搜索引擎领域位列第一，作为后来者热度远高于排第二、三的Splunk和Solr。Elasticsearch的创造者叫Shay Banon，最初是因为Lucence的接口使用困难，开发了一个库Compass，让Lucence更好用，2010年Shay Banon对Compass进行重写，把它变成一个高性能的、分布式的服务端软件，取名">
+<meta name="twitter:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/26127623-8cc2-4f52-bd26-9a36673a3239.png">
+  <link rel="canonical" href="http://zhongpan.tech/2020/04/14/031-elasticsearch-learning-notes-01/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>Elasticsearch学习笔记(一)-搭建环境 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2020/04/14/031-elasticsearch-learning-notes-01/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">Elasticsearch学习笔记(一)-搭建环境
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-04-14 08:26:33" itemprop="dateCreated datePublished" datetime="2020-04-14T08:26:33+08:00">2020-04-14</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/elastic-stack/" itemprop="url" rel="index"><span itemprop="name">elastic stack</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Elasticsearch目前的发展可谓如日中天，DBEngine上在搜索引擎领域位列第一，作为后来者热度远高于排第二、三的Splunk和Solr。Elasticsearch的创造者叫Shay Banon，最初是因为Lucence的接口使用困难，开发了一个库Compass，让Lucence更好用，2010年Shay Banon对Compass进行重写，把它变成一个高性能的、分布式的服务端软件，取名叫Elasticsearch，并在github开源。这背后还有一个温情的故事，据说起因是为了给新婚老婆写一个菜谱搜索应用，但是最后菜谱应用没有写出来，倒是造就了一个伟大的软件。</p>
+<p>Elasticsearch发展非常快，2010年2月发布第一个版本，2012年成立Elastic公司，2014年开始商业化，2018年纽交所上市，在全球股市低迷的背景下上市当天仍大涨94%，创造了开源软件的传奇。而Elastic公司非常的厚道，坚持开源路线，从6.3版本开始将其收费部分x-pack也<a href="https://www.elastic.co/cn/what-is/open-x-pack" target="_blank" rel="noopener">&quot;开源&quot;</a>，x-pack的基础功能终身免费，不需要注册，其中就包括安全方面必须的HTTPS，权限控制等。</p>
+<p>今天开始我想通过一系列文章来探索和学习一下ES，第一篇介绍一下ES的基本概念，搭建单节点的ES，通过图形客户端去探索ES的数据结构和操作，通过监控了解ES运行状态，建立对ES总体上的一个认识。</p>
+<a id="more"></a>
+<h2 id="es简介">ES简介</h2>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/26127623-8cc2-4f52-bd26-9a36673a3239.png" alt="image-20200414090725387"></p>
+<p>ES是基于Apache Lucence的一个开源的，高性能的分布式搜索引擎，Java语言开发，对外提供RESTful接口，使用方便。</p>
+<p>ES从6.3版本开始内置支持SQL，当然只支持查询操作，从而降低了学习其特有query DSL的成本，更是让上层基于SQL的应用可以无缝和ES对接。虽然ES越来越像一个数据库，但是它们之间还是有区别的，最显著的一个区别是，ES添加数据不是立刻刷新索引的，有一个刷新间隔，默认1s，所以不会立刻查询到，这就是所谓的近实时，ES强在检索和分析。所以ES和关系数据库的区别像是OLAP和OLTP的区别，适用于不同场景。</p>
+<p>ES主要的应用场景，一个是作为应用的前端检索缓存，提高海量数据的检索效率和做一些聚合检索，先从ES检索，然后再从后端存储检索。第二个是日志和监控，以ES为中心，Elastic公司发展起一个生态圈，之前叫ELK，也就是Elasticsearch、Logstash和Kibana，后来加入Beats，名字改成了Elastic Stack。以Kibana为入口，发展到上层的各种分析和可视化应用，包括热门的机器学习。</p>
+<p>先理解ES的一些基本概念，可以和关系数据库做一个类比：</p>
+<ul>
+<li>index：类似关系数据库的表，但是index不需要预先定义schema。</li>
+<li>document：类似关系数据库的记录，json格式。</li>
+<li>mapping：也就是类似关系数据的schema了，可以显式定义，也可以添加document时ES自动识别创建。可以指定mapping为严格模式，这样添加数据库就必须严格符合mapping中定义的字段。</li>
+<li>type：从7.0开始删除了，其实就是mapping的名字，一个index下只有一个type，有点鸡肋。虽然删除了，但是其实内部默认还是有一个type，名字固定是_doc。</li>
+<li>index template：创建index时自动对index做一些设置，例如index的主分片个数，复制分片个数，mapping字段的类型等等。</li>
+<li>ilm：也就是index lifecycle management，可以对数据分为Hot，Warm，Cold，Delete四个阶段，可以相应的定义不同的策略。</li>
+</ul>
+<h2 id="es安装">ES安装</h2>
+<p>最简单的方式就是用docker来运行。</p>
+<p>官方参考文档：<a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html</a></p>
+<p>我使用的最新的7.6.2版本，单节点运行时需要指定discovery.type=single-node，以前老的版本是不需要的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -p 9200:9200 -p 9300:9300 -e &quot;discovery.type=single-node&quot; docker.elastic.co/elasticsearch/elasticsearch:7.6.2</span><br></pre></td></tr></table></figure>
+<p>为了后续配置方面可以把配置文件放到host机器上，然后mount到容器。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d --name es -p 9200:9200 -p 9300:9300  -v $(pwd)/elasticsearch.docker.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v /etc/localtime:/etc/localtime elasticsearch:7.6.2</span><br></pre></td></tr></table></figure>
+<p>这里加入-v /etc/localtime:/etc/localtime是为了将容器的时间和host保持一致，后面再讲为什么。</p>
+<p>配置文件elasticsearch.docker.yml如下。</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">cluster.name:</span> <span class="string">"es_cluster"</span></span><br><span class="line"><span class="string">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span></span><br><span class="line"><span class="string">discovery.type:</span> <span class="string">single-node</span></span><br></pre></td></tr></table></figure>
+<p>从上面命令看到ES暴露2个端口，9200用于提供RESTful接口，9300端口提供TCP的内部协议通信，9300对外的访问在7.0标识为Deprecated，只有集群内部之间仍通过9300通信。</p>
+<p>通过curl就可以很方便的操作ES。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl http://127.0.0.1:9200</span><br></pre></td></tr></table></figure>
+<p>返回如下内容表示ES启动正常。</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"name"</span> : <span class="string">"903d9b3ecb97"</span>,</span><br><span class="line">  <span class="attr">"cluster_name"</span> : <span class="string">"es_cluster"</span>,</span><br><span class="line">  <span class="attr">"cluster_uuid"</span> : <span class="string">"zV0tEFQ4TgqtyzsabtzMMg"</span>,</span><br><span class="line">  <span class="attr">"version"</span> : &#123;</span><br><span class="line">    <span class="attr">"number"</span> : <span class="string">"7.6.2"</span>,</span><br><span class="line">    <span class="attr">"build_flavor"</span> : <span class="string">"default"</span>,</span><br><span class="line">    <span class="attr">"build_type"</span> : <span class="string">"docker"</span>,</span><br><span class="line">    <span class="attr">"build_hash"</span> : <span class="string">"ef48eb35cf30adf4db14086e8aabd07ef6fb113f"</span>,</span><br><span class="line">    <span class="attr">"build_date"</span> : <span class="string">"2020-03-26T06:34:37.794943Z"</span>,</span><br><span class="line">    <span class="attr">"build_snapshot"</span> : <span class="literal">false</span>,</span><br><span class="line">    <span class="attr">"lucene_version"</span> : <span class="string">"8.4.0"</span>,</span><br><span class="line">    <span class="attr">"minimum_wire_compatibility_version"</span> : <span class="string">"6.8.0"</span>,</span><br><span class="line">    <span class="attr">"minimum_index_compatibility_version"</span> : <span class="string">"6.0.0-beta1"</span></span><br><span class="line">  &#125;,</span><br><span class="line">  <span class="attr">"tagline"</span> : <span class="string">"You Know, for Search"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="图形客户端">图形客户端</h2>
+<p>推荐一个图形客户端<a href="https://github.com/appbaseio/dejavu/" target="_blank" rel="noopener">dejavu</a>，使用reactjs开发，相比常用的elasticsearch-head插件更加现代化一些，功能也丰富一些，对于探索ES非常有帮助。</p>
+<p>为了解决跨站访问问题，需要修改ES的配置如下，其中http.cors.allow-origin也可以指定为具体的地址，也就是dejavu的地址，例如http://localhost:1358。</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">cluster.name:</span> <span class="string">"es_cluster"</span></span><br><span class="line"><span class="string">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span></span><br><span class="line"><span class="string">discovery.type:</span> <span class="string">single-node</span></span><br><span class="line"><span class="string">http.cors.enabled:</span> <span class="literal">true</span></span><br><span class="line"><span class="string">http.cors.allow-origin:</span> <span class="string">"*"</span></span><br><span class="line"><span class="string">http.cors.allow-headers:</span> <span class="string">X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization</span></span><br><span class="line"><span class="string">http.cors.allow-credentials:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>然后重启一下ES。</p>
+<p>dejavu也支持docker运行。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d --name=es-ui -p 1358:1358 -d appbaseio/dejavu</span><br></pre></td></tr></table></figure>
+<p>访问http://localhost:1358即可使用。</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/127ac116-87b1-4bff-b4fd-f6e35dc086e3.png" alt="image-20200414143846241"></p>
+<p>输入ES地址和index名(*表示所有)就可以开始读取和操作document和mapping。目前不支持index tempalte，ILM策略等。</p>
+<p>需要注意如果ES是空的是连接不上的，必须至少有一个index。</p>
+<h2 id="监控">监控</h2>
+<p>ES最常用的场景是用于监控和分析，对ES自身的监控自然也不在话下。ES本生提供了丰富的监控指标，结合Kibana可以将他们可视化。通过监控可以让我们更了解ES内部的细节。</p>
+<h3 id="kibana安装">Kibana安装</h3>
+<p>官方文档：<a href="https://www.elastic.co/guide/en/kibana/7.6/docker.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/kibana/7.6/docker.html</a></p>
+<p>同样使用docker运行：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d --link es:elasticsearch -p 5601:5601 -v $(pwd)/kibana.docker.yml:/usr/share/kibana/config/kibana.yml -v /etc/localtime:/etc/localtime --name kibana kibana:7.6.2</span><br></pre></td></tr></table></figure>
+<p>–link可以在kibana容器中通过http://elasticsearch:9200访问ES。</p>
+<p>配置文件kibana.docker.yml如下。</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">server.name:</span> <span class="string">kibana</span></span><br><span class="line"><span class="string">server.host:</span> <span class="string">"0"</span></span><br><span class="line"><span class="string">elasticsearch.hosts:</span> <span class="string">[</span> <span class="string">"http://elasticsearch:9200"</span> <span class="string">]</span></span><br><span class="line"><span class="string">xpack.monitoring.ui.container.elasticsearch.enabled:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>kibana中对ES的监控是在Stack Monitoring功能中，其中也包含对Kibana，Logstash及Beats的监控。</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/4b1883ba-45c5-4276-be81-c10b03f59b87.png" alt="image-20200414145927599"></p>
+<p>数据采集有两种方式，通过Metricbeat采集或内部采集，官方推荐前者：</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/507d79b8-014a-4b7e-a496-80b8da02bf25.png" alt="image-20200414150035168"></p>
+<h3 id="时区问题">时区问题</h3>
+<p>先说遇到的一个问题，从Kibana查询最近一个小时的数据会发现查询不到，但是采集是正常的，也可以看到监控的index已经有数据了。</p>
+<p>问题原因是访问kibana的机器是用的本地时间，而ES、Kibana运行的机器是UTC时间。需要把ES运行的机器改成本地时间。ES是运行在容器中的，问题就变成了怎么修改容器的时区。答案就是先改Host的，然后让容器和Host保持一致。我是用的centos，以下是centos的修改方法。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo timedatectl set-timezone Asia/Shanghai</span><br><span class="line">sudo hwclock --localtime -w</span><br><span class="line">sudo timedatectl set-ntp yes</span><br></pre></td></tr></table></figure>
+<p>ES的容器基础镜像也是centos，所以运行容器的时候加上-v /etc/localtime:/etc/localtime即可。</p>
+<h3 id="通过内部采集">通过内部采集</h3>
+<p>官方文档：<a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.6/monitoring-production.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/7.6/monitoring-production.html</a></p>
+<p>先来看第一种方式，非常简单，通过kibana图形界面就可以操作。</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/bd4167fa-d109-4de5-ad69-85729ddf5971.png" alt="image-20200414161133787"></p>
+<p>点击Turn on monitoring就可以了，Kibana会帮我们将ES的xpack.monitoring.collection.enabled设为true，你也可以通过Kibana的Dev Tools中的Console自己修改，是一样的效果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">PUT _cluster/settings</span><br><span class="line">&#123;</span><br><span class="line">  &quot;persistent&quot;: &#123;</span><br><span class="line">    &quot;xpack.monitoring.collection.enabled&quot;: true</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>另外有几个参数也很重要，它们默认是true的，如果它们任意一个为false，那么也无法监控。</p>
+<ul>
+<li>
+<p>xpack.monitoring.enabled：决定是否启用监控</p>
+</li>
+<li>
+<p>xpack.monitoring.elasticsearch.collection.enabled：决定是否采集elasticsearch</p>
+</li>
+</ul>
+<p>内部采集是Kibana默认通过<a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.6/local-exporter.html" target="_blank" rel="noopener"><code>local</code> exporter</a>保存在被监控ES集群中，index名为.monitoring-*，例如对kibana的采集数据的index形如.monitorning-kibana-7-2020.04.13，每天一个。</p>
+<h3 id="通过metricbeat采集">通过Metricbeat采集</h3>
+<p>官方文档：<a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.6/configuring-metricbeat.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/elasticsearch/reference/7.6/configuring-metricbeat.html</a></p>
+<p>这是官方推荐的方式，两种方式二选一。</p>
+<p>首先同样需要ES的xpack.monitoring.collection.enabled设置为true，为了禁用内部采集将xpack.monitoring.elasticsearch.collection.enabled设置为false。</p>
+<p>然后安装Metricbeat，官方文档：<a href="https://www.elastic.co/guide/en/beats/metricbeat/7.6/running-on-docker.html" target="_blank" rel="noopener">https://www.elastic.co/guide/en/beats/metricbeat/7.6/running-on-docker.html</a></p>
+<p>同样用Docker运行，分两步，第一步是setup过程，主要是初始化一些数据。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">docker run --rm --link kibana:kibana --link es:elasticsearch \</span><br><span class="line">docker.elastic.co/beats/metricbeat:7.6.2 \</span><br><span class="line">setup -E setup.kibana.host=kibana:5601 \</span><br><span class="line">-E output.elasticsearch.hosts=[&quot;elasticsearch:9200&quot;]</span><br></pre></td></tr></table></figure>
+<p>第二步启动Metricbeat。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">docker run -d --link es:elasticsearch \</span><br><span class="line">  --name=metricbeat \</span><br><span class="line">  --user=root \</span><br><span class="line">  --volume=&quot;$(pwd)/metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro&quot; \</span><br><span class="line">  --volume=&quot;/var/run/docker.sock:/var/run/docker.sock:ro&quot; \</span><br><span class="line">  --volume=&quot;/sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro&quot; \</span><br><span class="line">  --volume=&quot;/proc:/hostfs/proc:ro&quot; \</span><br><span class="line">  --volume=&quot;/:/hostfs:ro&quot; \</span><br><span class="line">  docker.elastic.co/beats/metricbeat:7.6.2 metricbeat</span><br></pre></td></tr></table></figure>
+<p>这里可能会遇到一个问题。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Exiting: error loading config file: config file (&quot;metricbeat.yml&quot;) must be owned by the user identifier (uid=0) or root</span><br></pre></td></tr></table></figure>
+<p>或者：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Exiting: error loading config file: config file (&quot;metricbeat.yml&quot;) can only be writable by the owner but the permissions are &quot;-rw-rw-r--&quot; (to fix the permissions use: &apos;chmod go-w /usr/share/metricbeat/metricbeat.yml&apos;)</span><br></pre></td></tr></table></figure>
+<p>原因参考：<a href="https://www.elastic.co/guide/en/beats/libbeat/5.3/config-file-permissions.html#config-file-permissions" target="_blank" rel="noopener">https://www.elastic.co/guide/en/beats/libbeat/5.3/config-file-permissions.html#config-file-permissions</a></p>
+<p>因为在host中我是用的non-root用户uid1000，到容器里面的uid1000是metricbeat用户，但是beats要求配置文件必须是root拥有并且权限为0644。解决办法是把metricbeat.docker.yml的owner改成root。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo chown root metricbeat.docker.yml</span><br><span class="line">sudo chmod 0644 metricbeat.docker.yml</span><br></pre></td></tr></table></figure>
+<p>配置文件metricbeat.docker.yml如下。</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">metricbeat.config:</span></span><br><span class="line"><span class="attr">  modules:</span></span><br><span class="line"><span class="attr">    path:</span> <span class="string">$&#123;path.config&#125;/modules.d/*.yml</span></span><br><span class="line">    <span class="comment"># Reload module configs as they change:</span></span><br><span class="line">    <span class="string">reload.enabled:</span> <span class="literal">false</span></span><br><span class="line"></span><br><span class="line"><span class="string">metricbeat.autodiscover:</span></span><br><span class="line"><span class="attr">  providers:</span></span><br><span class="line"><span class="attr">    - type:</span> <span class="string">docker</span></span><br><span class="line">      <span class="string">hints.enabled:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="string">metricbeat.modules:</span></span><br><span class="line"><span class="attr">- module:</span> <span class="string">elasticsearch</span></span><br><span class="line"><span class="attr">  metricsets:</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">ccr</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">enrich</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">cluster_stats</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">index</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">index_recovery</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">index_summary</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">ml_job</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">node_stats</span></span><br><span class="line"><span class="bullet">    -</span> <span class="string">shard</span></span><br><span class="line"><span class="attr">  period:</span> <span class="number">10</span><span class="string">s</span></span><br><span class="line"><span class="attr">  hosts:</span> <span class="string">["http://elasticsearch:9200"]</span></span><br><span class="line">  <span class="comment">#username: "user"</span></span><br><span class="line">  <span class="comment">#password: "secret"</span></span><br><span class="line">  <span class="string">xpack.enabled:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">processors:</span></span><br><span class="line"><span class="attr">  - add_cloud_metadata:</span> <span class="string">~</span></span><br><span class="line"></span><br><span class="line"><span class="string">output.elasticsearch:</span></span><br><span class="line"><span class="attr">  hosts:</span> <span class="string">'$&#123;ELASTICSEARCH_HOSTS:elasticsearch:9200&#125;'</span></span><br><span class="line"><span class="attr">  username:</span> <span class="string">'$&#123;ELASTICSEARCH_USERNAME:&#125;'</span></span><br><span class="line"><span class="attr">  password:</span> <span class="string">'$&#123;ELASTICSEARCH_PASSWORD:&#125;'</span></span><br></pre></td></tr></table></figure>
+<p>用dejavu可以查看到metricbeat写入的index形如.monitoring-es-7-mb-2020.04.13，也是每天一个。</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/8ad51466-2dd8-4bb9-8f57-24feb19b8ff6.png" alt="img"></p>
+<p>回到Kibana的Stack Monitoring可以查看到ES和Kibana的监控了，其中ES是通过Metricbeat采集的数据，而Kibana是通过第一种方式内部采集的。</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/c99df748-36a9-4aed-93ff-826fdaeae2b5/index_files/de40e031-6037-404a-80c7-708614114f1b.png" alt="image-20200414171354181"></p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2020/04/14/031-elasticsearch-learning-notes-01/" title="Elasticsearch学习笔记(一)-搭建环境">http://zhongpan.tech/2020/04/14/031-elasticsearch-learning-notes-01/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/elasticsearch/" rel="tag"><i class="fa fa-tag"></i> elasticsearch</a>
+            
+              <a href="/tags/kibana/" rel="tag"><i class="fa fa-tag"></i> kibana</a>
+            
+              <a href="/tags/metricbeat/" rel="tag"><i class="fa fa-tag"></i> metricbeat</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/03/27/030-debug-springmvc-in-vscode/" rel="next" title="vscode调试springmvc应用">
+                  <i class="fa fa-chevron-left"></i> vscode调试springmvc应用
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2020/04/22/032-vscode-debug-connection-resused/" rel="prev" title="解决vscode调试python遇到connection refused问题">
+                  解决vscode调试python遇到connection refused问题 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#es简介"><span class="nav-number">1.</span> <span class="nav-text">ES简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#es安装"><span class="nav-number">2.</span> <span class="nav-text">ES安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#图形客户端"><span class="nav-number">3.</span> <span class="nav-text">图形客户端</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#监控"><span class="nav-number">4.</span> <span class="nav-text">监控</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#kibana安装"><span class="nav-number">4.1.</span> <span class="nav-text">Kibana安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#时区问题"><span class="nav-number">4.2.</span> <span class="nav-text">时区问题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#通过内部采集"><span class="nav-number">4.3.</span> <span class="nav-text">通过内部采集</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#通过metricbeat采集"><span class="nav-number">4.4.</span> <span class="nav-text">通过Metricbeat采集</span></a></li></ol></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

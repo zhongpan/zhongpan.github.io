@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="模块化是设计软件的一个基本手段，将软件模块化使得模块可以被复用，可以独立维护。Spring boot应用通常使用Spring initializr创建，它是不支持多模块创建的。多模块构建的能力是构建工具所提供，也就是Maven或Gradle。一些高级的IDE，如JIDE，可以支持多模块创建，就是帮你修改好Maven或Gradle的脚本。你可能使用的vscode这类编辑工具，但是也想体验一下多模块，">
+<meta name="keywords" content="gradle,spring boot">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Gradle多模块Spring Boot项目问题总结">
+<meta property="og:url" content="http://zhongpan.tech/2020/03/04/027-create-multi-module-spring-boot-gradle-project/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="模块化是设计软件的一个基本手段，将软件模块化使得模块可以被复用，可以独立维护。Spring boot应用通常使用Spring initializr创建，它是不支持多模块创建的。多模块构建的能力是构建工具所提供，也就是Maven或Gradle。一些高级的IDE，如JIDE，可以支持多模块创建，就是帮你修改好Maven或Gradle的脚本。你可能使用的vscode这类编辑工具，但是也想体验一下多模块，">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://docs.gradle.org/current/userguide/img/java-main-configurations.png">
+<meta property="og:image" content="https://docs.gradle.org/current/userguide/img/java-test-configurations.png">
+<meta property="og:image" content="https://docs.gradle.org/current/userguide/img/java-library-ignore-deprecated-main.png">
+<meta property="og:image" content="https://docs.gradle.org/current/userguide/img/java-library-ignore-deprecated-test.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.471Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Gradle多模块Spring Boot项目问题总结">
+<meta name="twitter:description" content="模块化是设计软件的一个基本手段，将软件模块化使得模块可以被复用，可以独立维护。Spring boot应用通常使用Spring initializr创建，它是不支持多模块创建的。多模块构建的能力是构建工具所提供，也就是Maven或Gradle。一些高级的IDE，如JIDE，可以支持多模块创建，就是帮你修改好Maven或Gradle的脚本。你可能使用的vscode这类编辑工具，但是也想体验一下多模块，">
+<meta name="twitter:image" content="https://docs.gradle.org/current/userguide/img/java-main-configurations.png">
+  <link rel="canonical" href="http://zhongpan.tech/2020/03/04/027-create-multi-module-spring-boot-gradle-project/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>Gradle多模块Spring Boot项目问题总结 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2020/03/04/027-create-multi-module-spring-boot-gradle-project/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">Gradle多模块Spring Boot项目问题总结
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-03-04 16:59:16" itemprop="dateCreated datePublished" datetime="2020-03-04T16:59:16+08:00">2020-03-04</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a></span>
+
+                
+                
+                  ，
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/java/spring-boot/" itemprop="url" rel="index"><span itemprop="name">spring boot</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>模块化是设计软件的一个基本手段，将软件模块化使得模块可以被复用，可以独立维护。Spring boot应用通常使用Spring initializr创建，它是不支持多模块创建的。多模块构建的能力是构建工具所提供，也就是Maven或Gradle。一些高级的IDE，如JIDE，可以支持多模块创建，就是帮你修改好Maven或Gradle的脚本。你可能使用的vscode这类编辑工具，但是也想体验一下多模块，那么就只能手工修改构建脚本。</p>
+<p>Gradle是基于Groovy语言构建出来的一个特定领域语言(DSL)，用来进行项目的构建。我觉得它和C++领域的CMake比较像，但是CMake是完全特化的脚本语言，而Gradle是基于JVM上的脚本语言Groovy构建，其编程和扩展能力远远超过CMake，Gradle也支持C++语言的构建。一个Gradle脚本是后缀为gradle的文件，其中通常为DSL语句，具有特定的格式，这能降低脚本的编写难度，同时你也完全可以参杂进Groovy语句，实现更复杂的功能。同时借助插件，还可以很容易扩展这个DSL，实际上Gradle大部分功能都是通过插件实现的。</p>
+<p>从网络上可以搜索到很多关于如何构建Gradle多模块项目的资料，但是它们都有共同的问题，所使用的Gradle版本较低，按照其方法都有一些问题。本文基于目前最新的版本，总结一下创建多模块Gradle项目的问题。</p>
+<a id="more"></a>
+<h2 id="版本">版本</h2>
+<ul>
+<li>
+<p>Spring boot 2.2.5</p>
+</li>
+<li>
+<p>Spring boot 2.2.5使用的Gradle版本是6.0.1</p>
+</li>
+</ul>
+<h2 id="官方文档">官方文档</h2>
+<p>最权威的关于如何创建多模块项目的文档莫过于官方文档，地址如下：</p>
+<p>Spring官方：<a href="https://spring.io/guides/gs/multi-module/" target="_blank" rel="noopener">https://spring.io/guides/gs/multi-module/</a></p>
+<p>Gradle官方：<a href="https://guides.gradle.org/creating-multi-project-builds/" target="_blank" rel="noopener">https://guides.gradle.org/creating-multi-project-builds/</a></p>
+<p>所以当你遇到问题的时候，多去找原文、找源头。</p>
+<h2 id="gradle插件引入方式变化">Gradle插件引入方式变化</h2>
+<p>参照网络上的文章（例如此文<a href="https://blog.csdn.net/hugowang/article/details/82021541?depth_1-utm_source=distribute.pc_relevant_right.none-task&amp;utm_source=distribute.pc_relevant_right.none-task" target="_blank" rel="noopener">VS Code开发Spring Boot + Cloud示例（四）Spring Boot + Gradle多项目框架</a>）出现问题的原因，是你使用了新版本的Gradle，其DSL语法有变化，主要的变化是插件引入的方式变了。</p>
+<p>以前的方式：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">apply <span class="string">plugin:</span> <span class="string">'java'</span></span><br></pre></td></tr></table></figure>
+<p>新的方式：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">plubins &#123;</span><br><span class="line">    id <span class="string">'java'</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>具体从哪个版本默认采用新的方式，我没有去考证，两者的区别见<a href="https://docs.gradle.org/current/dsl/org.gradle.plugin.use.PluginDependenciesSpec.html" target="_blank" rel="noopener">这里</a>。plugins存在一些限制，不能放在subprojects或allprojects里面，且必须放在一开始。问题就出在这里，如果你按文章里面的将根项目build.gradle的内容全部移到subprojects里面，就会报如下错误：</p>
+<blockquote>
+<p>Could not find method plugins() for arguments …</p>
+</blockquote>
+<p>如果想在根项目引入插件，在子模块复用，可以这样做，注意核心插件不能使用version和apply：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">plugins &#123;</span><br><span class="line">	id <span class="string">'org.springframework.boot'</span> version <span class="string">'2.2.5.RELEASE'</span> apply <span class="literal">false</span></span><br><span class="line">	id <span class="string">'io.spring.dependency-management'</span> version <span class="string">'1.0.9.RELEASE'</span> apply <span class="literal">false</span></span><br><span class="line">	id <span class="string">'java'</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">subprojects &#123;</span><br><span class="line"></span><br><span class="line">	apply <span class="string">plugin:</span> <span class="string">'org.springframework.boot'</span></span><br><span class="line">	apply <span class="string">plugin:</span> <span class="string">'io.spring.dependency-management'</span></span><br><span class="line">	apply <span class="string">plugin:</span> <span class="string">'java'</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="常用插件">常用插件</h2>
+<p>开发Spring boot应用常用如下插件：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">plugins &#123;</span><br><span class="line">	id <span class="string">'org.springframework.boot'</span> version <span class="string">'2.2.5.RELEASE'</span></span><br><span class="line">	id <span class="string">'io.spring.dependency-management'</span> version <span class="string">'1.0.9.RELEASE'</span></span><br><span class="line">	id <span class="string">'java'</span></span><br><span class="line">    id <span class="string">'java-library'</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>插件文档：</p>
+<ul>
+<li>
+<p>dependency management插件（社区插件）: <a href="https://docs.spring.io/spring-boot/docs/2.2.5.RELEASE/gradle-plugin/reference/html/" target="_blank" rel="noopener">org.springframework.boot</a></p>
+</li>
+<li>
+<p>Spring boot插件（社区插件）: <a href="https://docs.spring.io/dependency-management-plugin/docs/current-SNAPSHOT/reference/html/" target="_blank" rel="noopener">io.spring.dependency-management</a></p>
+</li>
+<li>
+<p>java语言插件（核心插件）：<a href="https://docs.gradle.org/current/userguide/java_plugin.html" target="_blank" rel="noopener">java</a></p>
+</li>
+<li>
+<p>java库开发（核心插件）：<a href="https://docs.gradle.org/current/userguide/java_library_plugin.html" target="_blank" rel="noopener">java-library</a></p>
+</li>
+</ul>
+<p>社区插件可以在门户https://plugins.gradle.org上查询(不过没有统一的插件使用说明文档，不太方便)，核心插件随Gradle发行，使用说明包含在Gradle文档中。</p>
+<h3 id="dependency-management插件">dependency management插件</h3>
+<p>这个插件提供了类似maven的依赖管理功能，通过如下block定义，其中定义的依赖，在Gradle dependencies中使用可以省略版本号。</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dependencyManagement &#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>常用的方式是通过maven bom导入依赖：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">dependencyManagement &#123;</span><br><span class="line">     imports &#123;</span><br><span class="line">          mavenBom &apos;io.spring.platform:platform-bom:1.0.1.RELEASE&apos;</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencies &#123;</span><br><span class="line">     implementation &apos;org.springframework.integration:spring-integration-core&apos;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="spring-boot插件">Spring boot插件</h3>
+<p>这个插件为Spring boot应用开发提供了一些便利。例如和dependency-management插件一起使用可以自动导入Spring boot的maven bom。</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">plugins &#123;</span><br><span class="line">	id <span class="string">'org.springframework.boot'</span> version <span class="string">'2.2.5.RELEASE'</span></span><br><span class="line">	id <span class="string">'io.spring.dependency-management'</span> version <span class="string">'1.0.9.RELEASE'</span></span><br><span class="line">	id <span class="string">'java'</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencies &#123;</span><br><span class="line">	implementation <span class="string">'org.springframework.boot:spring-boot-starter-web'</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>等价于：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">plugins &#123;</span><br><span class="line">	id <span class="string">'io.spring.dependency-management'</span> version <span class="string">'1.0.9.RELEASE'</span></span><br><span class="line">	id <span class="string">'java'</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencyManagement &#123;</span><br><span class="line">     imports &#123;</span><br><span class="line">          mavenBom(<span class="string">"org.springframework.boot:spring-boot-dependencies:2.2.5.RELEASE"</span>)</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencies &#123;</span><br><span class="line">	implementation <span class="string">'org.springframework.boot:spring-boot-starter-web'</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>还提供了bootRun任务启动应用：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gradle bootRun</span><br></pre></td></tr></table></figure>
+<h2 id="java插件的依赖配置变化">java插件的依赖配置变化</h2>
+<p>有一个不一样的地方可能会困扰你，网上的很多文章里面会出现：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">    compile(<span class="string">'org.springframework.boot:spring-boot-starter-web'</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但是最新的是这样的：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">    implementation <span class="string">'org.springframework.boot:spring-boot-starter-web'</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这是因为在最新的java插件中依赖配置有变化，有一些deprecated了，如下灰色字体，例如compile，<a href="https://docs.gradle.org/current/userguide/java_plugin.html#sec:java_plugin_and_dependency_management" target="_blank" rel="noopener">详见</a>。</p>
+<p><img src="https://docs.gradle.org/current/userguide/img/java-main-configurations.png" alt></p>
+<p><img src="https://docs.gradle.org/current/userguide/img/java-test-configurations.png" alt></p>
+<p>java-library提供如下依赖配置：</p>
+<p><img src="https://docs.gradle.org/current/userguide/img/java-library-ignore-deprecated-main.png" alt></p>
+<p><img src="https://docs.gradle.org/current/userguide/img/java-library-ignore-deprecated-test.png" alt></p>
+<h2 id="spring-boot-devtools不生效">spring-boot-devtools不生效</h2>
+<p><a href="https://docs.spring.io/spring-boot/docs/2.2.5.RELEASE/reference/html/using-spring-boot.html#using-boot-devtools" target="_blank" rel="noopener">spring-boot-devtools</a>主要提供Automatic restart和LiveReload功能，极大的提升了开发调试的效率，在Spring Initializr中创建项目时选择DevTools，会生成如下构建脚本：</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">configurations &#123;</span><br><span class="line">	developmentOnly</span><br><span class="line">	runtimeClasspath &#123;</span><br><span class="line">		extendsFrom developmentOnly</span><br><span class="line">	&#125;</span><br><span class="line">	compileOnly &#123;</span><br><span class="line">		extendsFrom annotationProcessor</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dependencies &#123;</span><br><span class="line">	developmentOnly <span class="string">'org.springframework.boot:spring-boot-devtools'</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在IDE中通过调式运行应用时，devtools功能一切正常，但是如果你通过如下命令启动应用，会发现自动重启并没有生效。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gradle bootRun</span><br></pre></td></tr></table></figure>
+<p>虽然bootRun会自动识别devtools，但是还是需要先编译，因为devtools默认监控的classpath下文件改变，另外重新编译后才能看到修改的效果。为了自动编译，可以通过gradle的连续构建实现，再执行如下命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gradle build --continuous</span><br></pre></td></tr></table></figure>
+<p>保持上述两个命令都开着，这时修改文件就会先触发build，然后再触发bootRun重启。</p>
+<p>参考：</p>
+<p><a href="https://dzone.com/articles/continuous-auto-restart-with-spring-boot-devtools" target="_blank" rel="noopener">Continuous Auto-restart With Spring Boot DevTools and Gradle</a></p>
+<p><a href="https://www.cnblogs.com/lspz/p/6832358.html" target="_blank" rel="noopener">SpringBoot配置devtools实现热部署</a></p>
+<h2 id="理解依赖配置">理解依赖配置</h2>
+<p>启用devtools工具后，依赖配置configurations中会出现自定义配置developmentOnly，这是什么目的呢？</p>
+<p>configurations里面的内容，每一项称为一个dependency configuration，其实是对dependency的一个分组，在dependencies往这个分组里面加入dependency，gradle对每个configuration解析出一个依赖树，供task使用。</p>
+<p>每一个dependency configuration代表一定角色，决定了：</p>
+<ul>
+<li>构建生命周期的哪些步骤会使用分组中的依赖</li>
+<li>分组中的依赖会传递吗，是传递到消费模块的编译期还是运行期，还是都有</li>
+<li>分组中的依赖会打包进构建输出吗</li>
+</ul>
+<p>前文的java及java library插件预定义了一些dependency configuration，如implementation、compileOnly等，它们的角色由插件预定义好。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>implementation</th>
+<th>compileOnly</th>
+<th>runtimeOnly</th>
+<th>api</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>构建阶段</td>
+<td>compile time <br>runtime <br>test compile time <br>test runtime</td>
+<td>compile time</td>
+<td>runtime</td>
+<td>compile time <br>runtime <br>test compile time <br>test runtime</td>
+</tr>
+<tr>
+<td>传递到消费模块编译期</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>传递到消费模块运行期</td>
+<td>yes</td>
+<td>no</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>打包到输出</td>
+<td>yes</td>
+<td>no</td>
+<td>yes</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p>对于devtools，它的实现原理是启用特殊的类加载器，仅用在开发调式阶段，所以它不会应用到构建阶段，也不需要传递到消费模块，也不需要打包到输出，所以这里就自定义了一个依赖配置developmentOnly，目的就是不参与构建阶段、不传递、不打包，这个依赖配置也可以用别的名字。</p>
+<p>那么devtools又是怎么生效的呢：</p>
+<ul>
+<li>在IDE中进行调试运行时，检测到devtools时就会使用其中的&quot;restart&quot;类加载器加载打开的工程，其他jar使用&quot;base&quot;类加载器加载；</li>
+<li>使用gradle bootRun运行时，检测到devtools时同上</li>
+</ul>
+<p>参考：</p>
+<p><a href="https://www.vojtechruzicka.com/spring-boot-devtools/" target="_blank" rel="noopener">Faster Development with Spring Boot DevTools</a></p>
+<p><a href="https://java2blog.com/spring-boot-devtools-tutorial/" target="_blank" rel="noopener">Spring boot devtools tutorial</a></p>
+<p><a href="https://reflectoring.io/maven-scopes-gradle-configurations/" target="_blank" rel="noopener">Maven Scopes and Gradle Configurations Explained</a></p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2020/03/04/027-create-multi-module-spring-boot-gradle-project/" title="Gradle多模块Spring Boot项目问题总结">http://zhongpan.tech/2020/03/04/027-create-multi-module-spring-boot-gradle-project/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/gradle/" rel="tag"><i class="fa fa-tag"></i> gradle</a>
+            
+              <a href="/tags/spring-boot/" rel="tag"><i class="fa fa-tag"></i> spring boot</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/02/22/026-development-management-with-airtable/" rel="next" title="使用在线表格airtable进行软件开发管理">
+                  <i class="fa fa-chevron-left"></i> 使用在线表格airtable进行软件开发管理
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2020/03/09/028-fix-baidu-seo-of-github-pages/" rel="prev" title="解决github pages无法被baidu抓取页面问题">
+                  解决github pages无法被baidu抓取页面问题 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#版本"><span class="nav-number">1.</span> <span class="nav-text">版本</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#官方文档"><span class="nav-number">2.</span> <span class="nav-text">官方文档</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gradle插件引入方式变化"><span class="nav-number">3.</span> <span class="nav-text">Gradle插件引入方式变化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#常用插件"><span class="nav-number">4.</span> <span class="nav-text">常用插件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#dependency-management插件"><span class="nav-number">4.1.</span> <span class="nav-text">dependency management插件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#spring-boot插件"><span class="nav-number">4.2.</span> <span class="nav-text">Spring boot插件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#java插件的依赖配置变化"><span class="nav-number">5.</span> <span class="nav-text">java插件的依赖配置变化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#spring-boot-devtools不生效"><span class="nav-number">6.</span> <span class="nav-text">spring-boot-devtools不生效</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#理解依赖配置"><span class="nav-number">7.</span> <span class="nav-text">理解依赖配置</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

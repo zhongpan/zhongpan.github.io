@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="Spring Data JPA对于单表操作非常方便，采用定义接口的方式，不用写任何实现代码就可以获得常用的数据库操作。但是对于多表联合查询，则不那么方便了，目前公司项目是采用数据库视图的方法，将多表联合查询全部变成了单表查询。数据库视图有众多好处，不失为一种解决方案，但是也存在一些弊端：  当数据库表结构变化需要同步修改视图，维护繁琐； 业务需求变化可能导致频繁修改视图暴露的字段； 有些场景可能只">
+<meta name="keywords" content="spring boot,jpa">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spring Data JPA中多表联合查询最佳实践">
+<meta property="og:url" content="http://zhongpan.tech/2020/07/20/034-best-practice-of-multi-table-joint-query-in-spring-data-jpa/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="Spring Data JPA对于单表操作非常方便，采用定义接口的方式，不用写任何实现代码就可以获得常用的数据库操作。但是对于多表联合查询，则不那么方便了，目前公司项目是采用数据库视图的方法，将多表联合查询全部变成了单表查询。数据库视图有众多好处，不失为一种解决方案，但是也存在一些弊端：  当数据库表结构变化需要同步修改视图，维护繁琐； 业务需求变化可能导致频繁修改视图暴露的字段； 有些场景可能只">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://vipkshttp0.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/82a049e9-f035-4f5f-9bca-dc9a04639f0e/index_files/ba483d21-94ab-45fd-bb03-79356c931330.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.475Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spring Data JPA中多表联合查询最佳实践">
+<meta name="twitter:description" content="Spring Data JPA对于单表操作非常方便，采用定义接口的方式，不用写任何实现代码就可以获得常用的数据库操作。但是对于多表联合查询，则不那么方便了，目前公司项目是采用数据库视图的方法，将多表联合查询全部变成了单表查询。数据库视图有众多好处，不失为一种解决方案，但是也存在一些弊端：  当数据库表结构变化需要同步修改视图，维护繁琐； 业务需求变化可能导致频繁修改视图暴露的字段； 有些场景可能只">
+<meta name="twitter:image" content="http://vipkshttp0.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/82a049e9-f035-4f5f-9bca-dc9a04639f0e/index_files/ba483d21-94ab-45fd-bb03-79356c931330.png">
+  <link rel="canonical" href="http://zhongpan.tech/2020/07/20/034-best-practice-of-multi-table-joint-query-in-spring-data-jpa/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>Spring Data JPA中多表联合查询最佳实践 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2020/07/20/034-best-practice-of-multi-table-joint-query-in-spring-data-jpa/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">Spring Data JPA中多表联合查询最佳实践
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-07-20 11:23:37" itemprop="dateCreated datePublished" datetime="2020-07-20T11:23:37+08:00">2020-07-20</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/spring-boot/" itemprop="url" rel="index"><span itemprop="name">spring boot</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Spring Data JPA对于单表操作非常方便，采用定义接口的方式，不用写任何实现代码就可以获得常用的数据库操作。但是对于多表联合查询，则不那么方便了，目前公司项目是采用数据库视图的方法，将多表联合查询全部变成了单表查询。数据库视图有众多好处，不失为一种解决方案，但是也存在一些弊端：</p>
+<ul>
+<li>当数据库表结构变化需要同步修改视图，维护繁琐；</li>
+<li>业务需求变化可能导致频繁修改视图暴露的字段；</li>
+<li>有些场景可能只需要2表联合，有些场景需要更多表联合，要么建立一个大视图，要么需要建立多个类似视图，都不太好；</li>
+<li>视图的SQL会变得越来越庞大，难以维护；</li>
+<li>定义了实体类，JPA自动建表会把视图建成表；</li>
+<li>SQL SERVER会将视图的查询转换为对基本表的查询，性能不高。</li>
+</ul>
+<p>总之将一部分业务逻辑放到数据库层维护，并不是一个特别好的方式。那么Spring Data JPA对多表查询还有哪些方法呢？有没有更好的选择呢？</p>
+<a id="more"></a>
+<p>答案是肯定的，直接上结论。</p>
+<table>
+<thead>
+<tr>
+<th><strong>方案</strong></th>
+<th><strong>说明</strong></th>
+<th><strong>自定义接收对象</strong></th>
+<th><strong>SQL</strong></th>
+<th><strong>分页</strong></th>
+<th><strong>多表联合</strong></th>
+<th><strong>问题</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>方案一</td>
+<td>@Query</td>
+<td>JPQL：DTO或投影原生SQL：Object[]，map(2个字段时)</td>
+<td>JPQL或原生SQL</td>
+<td>JpaRepository</td>
+<td>实体上配不配关系都可以</td>
+<td>1.查询条件要嵌入SQL语句内，一些复杂的情形不好处理，例如某个字段模糊检索，字段是动态的；2.分页查询countQuery把查询语句重复了一遍</td>
+</tr>
+<tr>
+<td>方案二</td>
+<td>Specification</td>
+<td>不支持，只能返回对应PO</td>
+<td>无SQL</td>
+<td>结合JpaRepository</td>
+<td>需要在实体上配置关系，如@OneToOne，否则无法实现左连接，只能联合查询</td>
+<td>1.实体需要配置连接关系2.每一个关联对象都是单独的数据库查询</td>
+</tr>
+<tr>
+<td>方案三</td>
+<td>EntityManager</td>
+<td>不支持投影，其他同@Query</td>
+<td>JPQL或原生SQL</td>
+<td>自己封装</td>
+<td>实体上配不配关系都可以</td>
+<td>相比于@Query好处是，JPQL字符串可以动态拼接，可以处理一些复杂的查询情形。但是分页需要自己封装。</td>
+</tr>
+<tr>
+<td>方案四</td>
+<td>CriteriaQuery</td>
+<td>DTO</td>
+<td>无SQL</td>
+<td>自己封装</td>
+<td>需要在实体上配置关系，如@OneToOne否则无法实现左连接，只能联合查询</td>
+<td>同Specification，且分页需要自己封装</td>
+</tr>
+<tr>
+<td>终极方案</td>
+<td>QueryDSL</td>
+<td>DTOTuple</td>
+<td>无SQL</td>
+<td>支持</td>
+<td>实体上配不配关系都可以</td>
+<td>解决以上所有问题</td>
+</tr>
+</tbody>
+</table>
+<p>选择一个好的解决方案，需要考虑如下几个方面：</p>
+<ul>
+<li>能够自定义对象接收查询结果集；</li>
+<li>能够支持复杂的、动态的查询条件；</li>
+<li>既然使用JPA，当然最好能够用类型安全的查询方式，并且使用起来比较自然；</li>
+<li>能够原生支持分页查询；</li>
+<li>能够支持left join，并且对实体定义没有约束。</li>
+</ul>
+<p>上表就是从这几个方面进行分析，最后QueryDSL堪称完美，下面详细介绍几种方案。</p>
+<p>示例代码：<a href="https://github.com/zhongpan/jpa-demo.git" target="_blank" rel="noopener">https://github.com/zhongpan/jpa-demo.git</a></p>
+<h2 id="spring-data-jpa">Spring Data JPA</h2>
+<p>先了解下JPA、Hibernate、Spring Data JPA三者的关系是什么？</p>
+<p>JPA是一个接口规范，随着Java EE 5发布，也是EJB3.0的一部分。Hibernate是先于JPA出现的一种历史悠久的ORM框架，它实现了JPA，也是目前用的最多的实现。而Sprint Data JPA是Spring中提供的开箱即用的基于JPA的数据库访问框架，其采用的实现正是Hibernate。Spring Data JPA提供的数据库访问能力如下：</p>
+<p><img src="http://vipkshttp0.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/82a049e9-f035-4f5f-9bca-dc9a04639f0e/index_files/ba483d21-94ab-45fd-bb03-79356c931330.png" alt="img"></p>
+<p>从上述接口的名字就可以看出：</p>
+<ul>
+<li>CrudRepository：最基本的增删改查操作</li>
+<li>PagingAndSortingRepository：分页查询</li>
+<li>QueryByExampleExecutor：基于样本查询，避免了传一堆参数，还要判断是否null</li>
+<li>JpaSpecificationExecutor：基于Specification查询，就是对CriteriaQuery的封装，类型安全的查询方式</li>
+<li>QuerydslPredicateExecutor：基于QueryDSL的查询，也是类型安全的</li>
+</ul>
+<p>上述接口的实现在SimpleJpaRepository和QuerydslJpaPredicateExecutor中，其中就是基于JPA的EntiryManager接口进行封装。如果我们要重写实现，也是通过EntiryManager来完成。</p>
+<h2 id="方案一">方案一</h2>
+<p>首先想到的方法自然是使用@Query注解，直接使用JPQL进行联合查询，自定义接收对象，left join都不在话下。主要的问题是对于一些复杂的、动态的查询条件不好处理，另外分页的countQuery不得不把主查询重写一遍，有点烦人。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">VmhostDao</span> <span class="keyword">extends</span> <span class="title">JpaRepository</span>&lt;<span class="title">VmhostPO</span>, <span class="title">String</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 方法一：使用@Query注解，可以自定义接收对象</span></span><br><span class="line">  <span class="comment">// 问题：查询条件要嵌入SQL语句内，一些复杂的情形不好处理，例如某个字段模糊检索，字段是动态的；分页查询countQuery把查询语句重复了一遍</span></span><br><span class="line"></span><br><span class="line">  <span class="meta">@Query</span>(<span class="string">"select new com.example.demo.entity.VmhostDTO(v, u, t) from VmhostPO v left join AuthUserPO u on v.userid = u.id left join AuthTenantPO t on v.tenantid = t.id where v.name like %?1%"</span>)</span><br><span class="line">  <span class="function">List&lt;VmhostDTO&gt; <span class="title">findVmhost</span><span class="params">(String name)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Query</span>(<span class="string">"select new com.example.demo.entity.VmhostInfoDTO(v.id, v.name, u.username, t.name) from VmhostPO v left join AuthUserPO u on v.userid = u.id left join AuthTenantPO t on v.tenantid = t.id where v.name like %:name%"</span>)</span><br><span class="line">  <span class="function">List&lt;VmhostInfoDTO&gt; <span class="title">findVmhostInfo</span><span class="params">(String name)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Query</span>(<span class="string">"select v.id as id, v.name as name, u.username as userName, t.name as tname from VmhostPO v left join AuthUserPO u on v.userid = u.id left join AuthTenantPO t on v.tenantid = t.id"</span>)</span><br><span class="line">  <span class="function">List&lt;VmhostInfoByProjection&gt; <span class="title">findVmhostInfoByProjection</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Query</span>(value = <span class="string">"select new com.example.demo.entity.VmhostInfoDTO(v.id, v.name, u.username, t.name) from VmhostPO v left join AuthUserPO u on v.userid = u.id left join AuthTenantPO t on v.tenantid = t.id where v.name like %:name%"</span>, </span><br><span class="line">  countQuery = <span class="string">"select count(*) from VmhostPO v left join AuthUserPO u on v.userid = u.id left join AuthTenantPO t on v.tenantid = t.id where v.name like %:name%"</span>)</span><br><span class="line">  <span class="function">Page&lt;VmhostInfoDTO&gt; <span class="title">findVmhostInfoByPage</span><span class="params">(String name, Pageable pageable)</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="方案二">方案二</h2>
+<p>那么SQL的组织能否动态编程控制呢，自然会想到Specification查询，查询条件可以通过CriteriaQuery动态拼装。这也是Spring Data JPA中用的最广泛的查询方式。但是这种方式存在一些限制，首先不能灵活自定义接收对象，只能返回PO，其次要想实现left join，必须在实体上定义关系，最后关联对象不是一次查询回来的，而是单独的查询。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">VmhostSpecWithRelationDao</span></span></span><br><span class="line"><span class="class">    <span class="keyword">extends</span> <span class="title">JpaRepository</span>&lt;<span class="title">VmhostWithRelationPO</span>, <span class="title">String</span>&gt;, <span class="title">JpaSpecificationExecutor</span>&lt;<span class="title">VmhostWithRelationPO</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 方案二：使用Specification查询</span></span><br><span class="line">  <span class="comment">// 问题：实体必须配置关系，否则无法左连接；每个关联对象是单独数据库查询</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">package</span> com.example.demo.service;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">VmhostService</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> List&lt;VmhostWithRelationPO&gt; <span class="title">listVmhostSpecWithRelation</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">    Specification&lt;VmhostWithRelationPO&gt; spec = (root, cq, cb) -&gt; &#123;</span><br><span class="line">      root.join(<span class="string">"user"</span>, JoinType.LEFT);</span><br><span class="line">      root.join(<span class="string">"tenant"</span>, JoinType.LEFT);</span><br><span class="line">      <span class="keyword">return</span> cb.like(root.get(<span class="string">"name"</span>), <span class="string">"%"</span> + name + <span class="string">"%"</span>);</span><br><span class="line">    &#125;;</span><br><span class="line">    List&lt;VmhostWithRelationPO&gt; list = vmhostSpecWithRelationDao.findAll(spec);</span><br><span class="line">    <span class="keyword">return</span> list;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可能大家有两点疑问：</p>
+<ul>
+<li>@Query和Specification能否混用，@Query定义select的结果，Specification定义查询条件</li>
+</ul>
+<p>答案：不行，总是@Query有效，你定义的Specification参数压根就不会理会</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JpaSpecificationExecutor的参数和JpaRepository不一样，没啥用，SimpleJpaRepository总是用的JpaRepository的参数</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">VmhostSpecDao</span> <span class="keyword">extends</span> <span class="title">JpaRepository</span>&lt;<span class="title">VmhostPO</span>, <span class="title">String</span>&gt;, <span class="title">JpaSpecificationExecutor</span>&lt;<span class="title">VmhostInfoDTO</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 方案二：@Query和Specification是不能混用的，也无法改变接收结果集对象</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 无法混用，总是query有效，spec参数压根就不会理会</span></span><br><span class="line">  <span class="meta">@Query</span>(<span class="string">"from VmhostPO"</span>)</span><br><span class="line">  <span class="function">List&lt;VmhostPO&gt; <span class="title">findVmhost</span><span class="params">(Specification&lt;VmhostPO&gt; spec)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 覆盖JpaSpecificationExecutor的方法可以吗？一样的，根本不会走到findAll的默认实现 </span></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="meta">@Query</span>(<span class="string">"select new com.example.demo.entity.VmhostInfoDTO(v.id, v.name, u.username, t.name) from VmhostPO v left join AuthUserPO u on v.userid = u.id left join AuthTenantPO t on v.tenantid = t.id"</span>)</span><br><span class="line">  <span class="function">List&lt;VmhostInfoDTO&gt; <span class="title">findAll</span><span class="params">(Specification&lt;VmhostInfoDTO&gt; spec)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>Specification控制接收结果集对象</li>
+</ul>
+<p>答案：对不起，Specification的toPredicate中执行select是无效的，里面只能返回查询条件。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">  <span class="comment">// 这样写没有用，生成如下sql</span></span><br><span class="line">  <span class="comment">// select vmhostpo0_.id as id1_2_, vmhostpo0_.addresses as addresse2_2_, vmhostpo0_.availablezone as availabl3_2_, vmhostpo0_.baremetal as baremeta4_2_, vmhostpo0_.cpucore as cpucore5_2_, vmhostpo0_.createtime as createti6_2_, vmhostpo0_.disksize as disksize7_2_, vmhostpo0_.floatip as floatip8_2_, vmhostpo0_.hostname as hostname9_2_, vmhostpo0_.locked as locked10_2_, vmhostpo0_.metadata as metadat11_2_, vmhostpo0_.name as name12_2_, vmhostpo0_.privatenetworkid as private13_2_, vmhostpo0_.ramsize as ramsize14_2_, vmhostpo0_.tenantid as tenanti15_2_, vmhostpo0_.tenantname as tenantn16_2_, vmhostpo0_.type as type17_2_, vmhostpo0_.userid as userid18_2_, vmhostpo0_.username as usernam19_2_, vmhostpo0_.vmstatus as vmstatu20_2_ from vmhost vmhostpo0_ cross join auth_user authuserpo1_ cross join auth_tenant authtenant2_ where vmhostpo0_.userid=authuserpo1_.id and vmhostpo0_.tenantid=authtenant2_.id and (vmhostpo0_.name like ?)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Optional&lt;VmhostInfoDTO&gt; <span class="title">listVmhostSpec</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">  Specification&lt;VmhostInfoDTO&gt; spec = (root, cq, cb) -&gt; &#123;</span><br><span class="line">    <span class="comment">// 只能cross join，要left join需要在实体上建立关系</span></span><br><span class="line">    Root&lt;AuthUserPO&gt; user = cq.from(AuthUserPO.class);</span><br><span class="line">    Root&lt;AuthTenantPO&gt; tenant = cq.from(AuthTenantPO.class);</span><br><span class="line">    <span class="comment">// 这里执行select没有用，这个函数只能返回查询条件，外层会覆盖select</span></span><br><span class="line">    cq.multiselect(root.get(<span class="string">"id"</span>), root.get(<span class="string">"name"</span>), user.get(<span class="string">"username"</span>), tenant.get(<span class="string">"name"</span>));</span><br><span class="line">    <span class="keyword">return</span> cb.and(cb.equal(root.get(<span class="string">"userid"</span>), user.get(<span class="string">"id"</span>)), cb.equal(root.get(<span class="string">"tenantid"</span>), tenant.get(<span class="string">"id"</span>)),</span><br><span class="line">        cb.like(root.get(<span class="string">"name"</span>), <span class="string">"%"</span> + name + <span class="string">"%"</span>));</span><br><span class="line"></span><br><span class="line">  &#125;;</span><br><span class="line">  <span class="keyword">return</span> vmhostSpecDao.findOne(spec);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因为SimpleJpaRepository的实现已经固定了select，跟JpaRepository的类型参数相关，跟JpaSpecificationExecutor的类型参数无关</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> &lt;S extends T&gt; <span class="function">TypedQuery&lt;S&gt; <span class="title">getQuery</span><span class="params">(@Nullable Specification&lt;S&gt; spec, Class&lt;S&gt; domainClass, Sort sort)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    CriteriaBuilder builder = em.getCriteriaBuilder();</span><br><span class="line">    CriteriaQuery&lt;S&gt; query = builder.createQuery(domainClass);</span><br><span class="line"></span><br><span class="line">    Root&lt;S&gt; root = applySpecificationToCriteria(spec, domainClass, query);</span><br><span class="line">    query.select(root);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (sort.isSorted()) &#123;</span><br><span class="line">        query.orderBy(toOrders(sort, root, builder));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> applyRepositoryMethodMetadata(em.createQuery(query));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="方案三">方案三</h2>
+<p>上面两种使用方法是Spring Data JPA用的最多的，接下来只能从底层入手，直接使用EntiryManager。这种方法完全靠自己，所有接口都需要自己实现，丧失了Spring Data JPA的便利性。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">VmhostEMDao</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Autowired</span></span><br><span class="line">  <span class="meta">@PersistenceContext</span></span><br><span class="line">  <span class="keyword">private</span> EntityManager entityManager;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 方案三：使用原生的entityManager，解决@Query的SQL无法动态拼接问题</span></span><br><span class="line">  <span class="comment">// 此时分页就需要自己封装了，也没有了JPA自动实现的接口</span></span><br><span class="line">  <span class="comment">// 注意这里like后面要引号</span></span><br><span class="line"></span><br><span class="line">  <span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">  <span class="function"><span class="keyword">public</span> List&lt;VmhostDTO&gt; <span class="title">findVmhost</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">    List&lt;VmhostDTO&gt; list = entityManager.createQuery(</span><br><span class="line">        <span class="string">"select new com.example.demo.entity.VmhostDTO(v, u, t) from VmhostPO v left join AuthUserPO u on v.userid = u.id left join AuthTenantPO t on v.tenantid = t.id where v.name like '%"</span></span><br><span class="line">            + name + <span class="string">"%'"</span>)</span><br><span class="line">        .getResultList();</span><br><span class="line">    <span class="keyword">return</span> list;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">  <span class="function"><span class="keyword">public</span> List&lt;VmhostInfoByProjection&gt; <span class="title">findVmhostInfoByProjection</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 此时总是Object[]，不支持投影</span></span><br><span class="line">    List&lt;VmhostInfoByProjection&gt; list = entityManager.createQuery(</span><br><span class="line">        <span class="string">"select v.id as id, v.name as name, u.username as userName, t.name as tname from VmhostPO v left join AuthUserPO u on v.userid = u.id left join AuthTenantPO t on v.tenantid = t.id"</span>)</span><br><span class="line">        .getResultList();</span><br><span class="line">    <span class="keyword">return</span> list;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="方案四">方案四</h2>
+<p>类似于方案二之于方案一，我们也可以使用类型安全的查询方式CriteraQuery。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">VmhostCQDao</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Autowired</span></span><br><span class="line">  <span class="meta">@PersistenceContext</span></span><br><span class="line">  <span class="keyword">private</span> EntityManager entityManager;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 方案四：相对于方案三，使用了类型安全的CriteriaQuery，其实Specification也是用的CriteriaQuery，所以存在和Specification一样的限制，但是可以控制select了，比Specification灵活一点</span></span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> List&lt;VmhostDTO&gt; <span class="title">findVmhost</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">    CriteriaBuilder builder = entityManager.getCriteriaBuilder();</span><br><span class="line">    CriteriaQuery&lt;VmhostDTO&gt; query = builder.createQuery(VmhostDTO.class);</span><br><span class="line">    <span class="comment">// 实体上没有配置关系，无法使用left join，只能联合查询(inner join)</span></span><br><span class="line">    Root&lt;VmhostPO&gt; root = query.from(VmhostPO.class);</span><br><span class="line">    Root&lt;AuthUserPO&gt; rootUser = query.from(AuthUserPO.class);</span><br><span class="line">    Root&lt;AuthTenantPO&gt; rootTenant = query.from(AuthTenantPO.class);</span><br><span class="line">    query.multiselect(root, rootUser, rootTenant).where(builder.equal(root.get(<span class="string">"userid"</span>), rootUser.get(<span class="string">"id"</span>)),</span><br><span class="line">        builder.equal(root.get(<span class="string">"tenantid"</span>), rootTenant.get(<span class="string">"id"</span>)), builder.like(root.get(<span class="string">"name"</span>), <span class="string">"%"</span> + name + <span class="string">"%"</span>));</span><br><span class="line"></span><br><span class="line">    List&lt;VmhostDTO&gt; list = entityManager.createQuery(query).getResultList();</span><br><span class="line">    <span class="keyword">return</span> list;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="终极方案">终极方案</h2>
+<p>到了终极方案了，Spring Data JPA集成了对QueryDSL的支持，官方参考见：<a href="http://www.querydsl.com/static/querydsl/latest/reference/html_single/" target="_blank" rel="noopener">http://www.querydsl.com/static/querydsl/latest/reference/html_single</a>。</p>
+<p>是不是有点像方案二+方案四，单表的时候直接使用JpaRepository和QuerydslPredicateExecutor提供的默认实现。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.demo.dao;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.example.demo.entity.VmhostPO;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.data.jpa.repository.JpaRepository;</span><br><span class="line"><span class="keyword">import</span> org.springframework.data.querydsl.QuerydslPredicateExecutor;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">VmhostQDSLDao</span></span></span><br><span class="line"><span class="class">    <span class="keyword">extends</span> <span class="title">JpaRepository</span>&lt;<span class="title">VmhostPO</span>, <span class="title">String</span>&gt;, <span class="title">QuerydslPredicateExecutor</span>&lt;<span class="title">VmhostPO</span>&gt;, <span class="title">VmhostRepository</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 方案五：VmhostRepository使用原生的entityManager配合QueryDSL，完美解决所有问题</span></span><br><span class="line">  <span class="comment">// 对于单表也可以使用QuerydslPredicateExecutor，自动拥有默认实现</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>多表的时候就基于EntityManager扩展，但是querydsl已经帮我们做了很多工作，不是从头开始。querydsl的书写方式相对于CriteriaQuery也更加自然，易于理解。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@NoRepositoryBean</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseRepository</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@PersistenceContext</span></span><br><span class="line">  <span class="keyword">protected</span> EntityManager em;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">VmhostRepository</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> List&lt;VmhostDTO&gt; <span class="title">findVmhost</span><span class="params">(Predicate predicate)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> QueryResults&lt;VmhostDTO&gt; <span class="title">findVmhostByPage</span><span class="params">(Predicate predicate, Pageable pageable)</span></span>;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">VmhostRepositoryImpl</span> <span class="keyword">extends</span> <span class="title">BaseRepository</span> <span class="keyword">implements</span> <span class="title">VmhostRepository</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 多表左连接</span></span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> List&lt;VmhostDTO&gt; <span class="title">findVmhost</span><span class="params">(Predicate predicate)</span> </span>&#123;</span><br><span class="line">    JPAQueryFactory queryFactory = <span class="keyword">new</span> JPAQueryFactory(em);</span><br><span class="line">    JPAQuery&lt;VmhostDTO&gt; jpaQuery = queryFactory</span><br><span class="line">        .select(Projections.constructor(VmhostDTO.class, QVmhostPO.vmhostPO, QAuthUserPO.authUserPO,</span><br><span class="line">            QAuthTenantPO.authTenantPO))</span><br><span class="line">        .from(QVmhostPO.vmhostPO).leftJoin(QAuthUserPO.authUserPO)</span><br><span class="line">        .on(QVmhostPO.vmhostPO.userid.stringValue().eq(QAuthUserPO.authUserPO.id.stringValue()))</span><br><span class="line">        .leftJoin(QAuthTenantPO.authTenantPO)</span><br><span class="line">        .on(QVmhostPO.vmhostPO.tenantid.stringValue().eq(QAuthTenantPO.authTenantPO.id.stringValue()));</span><br><span class="line">    jpaQuery.where(predicate);</span><br><span class="line">    <span class="keyword">return</span> jpaQuery.fetch();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> QueryResults&lt;VmhostDTO&gt; <span class="title">findVmhostByPage</span><span class="params">(Predicate predicate, Pageable pageable)</span> </span>&#123;</span><br><span class="line">    JPAQueryFactory queryFactory = <span class="keyword">new</span> JPAQueryFactory(em);</span><br><span class="line">    JPAQuery&lt;VmhostDTO&gt; jpaQuery = queryFactory</span><br><span class="line">        .select(Projections.constructor(VmhostDTO.class, QVmhostPO.vmhostPO, QAuthUserPO.authUserPO,</span><br><span class="line">            QAuthTenantPO.authTenantPO))</span><br><span class="line">        .from(QVmhostPO.vmhostPO).leftJoin(QAuthUserPO.authUserPO)</span><br><span class="line">        .on(QVmhostPO.vmhostPO.userid.stringValue().eq(QAuthUserPO.authUserPO.id.stringValue()))</span><br><span class="line">        .leftJoin(QAuthTenantPO.authTenantPO)</span><br><span class="line">        .on(QVmhostPO.vmhostPO.tenantid.stringValue().eq(QAuthTenantPO.authTenantPO.id.stringValue()))</span><br><span class="line">        .offset(pageable.getOffset()).limit(pageable.getPageSize());</span><br><span class="line">    jpaQuery.where(predicate);</span><br><span class="line">    <span class="keyword">return</span> jpaQuery.fetchResults();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="总结">总结</h2>
+<p>以上方法都还是在Spring Data JPA框架之内，如果你愿意，你也可以去重写SimpleJpaRepository，重写了注意通过如下注解启用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@EnableJpaRepositories</span>(repositoryBaseClass = XXXXXX.class)</span><br></pre></td></tr></table></figure>
+<p>其实QueryDSL已经做了很好的封装，完全没有必要重复造轮子，Spring Data JPA也提供了很多扩展点，在保留其便利性的基础上，根据需要去扩展，不需要全部推倒重来。</p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2020/07/20/034-best-practice-of-multi-table-joint-query-in-spring-data-jpa/" title="Spring Data JPA中多表联合查询最佳实践">http://zhongpan.tech/2020/07/20/034-best-practice-of-multi-table-joint-query-in-spring-data-jpa/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/spring-boot/" rel="tag"><i class="fa fa-tag"></i> spring boot</a>
+            
+              <a href="/tags/jpa/" rel="tag"><i class="fa fa-tag"></i> jpa</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/06/04/033-time-format-processing-in-springboot/" rel="next" title="详解Spring Boot中日期时间格式处理">
+                  <i class="fa fa-chevron-left"></i> 详解Spring Boot中日期时间格式处理
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2020/07/20/035-a-trap-for-using-criteriaquery/" rel="prev" title="CriteriaQuery使用的一个陷阱">
+                  CriteriaQuery使用的一个陷阱 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#spring-data-jpa"><span class="nav-number">1.</span> <span class="nav-text">Spring Data JPA</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方案一"><span class="nav-number">2.</span> <span class="nav-text">方案一</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方案二"><span class="nav-number">3.</span> <span class="nav-text">方案二</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方案三"><span class="nav-number">4.</span> <span class="nav-text">方案三</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#方案四"><span class="nav-number">5.</span> <span class="nav-text">方案四</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#终极方案"><span class="nav-number">6.</span> <span class="nav-text">终极方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>

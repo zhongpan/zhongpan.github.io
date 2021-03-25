@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+  <link rel="alternate" href="/atom.xml" title="钟潘的博客" type="application/atom+xml">
+  <meta name="google-site-verification" content="2TdusdCgy0XH_aYwMddV79zvkUQDm0et9dbDFebIdAA">
+  <meta name="baidu-site-verification" content="4uPrHzpUfX">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":true,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":true,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="c++对内存的原始控制是其优势，同时带来一系列灾难性问题，例如野指针问题、内存泄漏问题、内存碎片问题，在c++世界这是非常常见而棘手的问题，其实这些问题早有成熟应对方案，就以boost为例，早就包含相关库，有些已经成为c++标准库。c++解决内存方面的技术有： （1）智能指针：解决野指针、内存泄漏问题； （2）内存池：提升内存分配效率，解决内存碎片问题； （3）flyweight：解决大量重复对象">
+<meta name="keywords" content="c++,boost,memory">
+<meta property="og:type" content="article">
+<meta property="og:title" content="有用的c++内存相关库">
+<meta property="og:url" content="http://zhongpan.tech/2020/02/06/025-useful-cpp-memory-related-libraries/index.html">
+<meta property="og:site_name" content="钟潘的博客">
+<meta property="og:description" content="c++对内存的原始控制是其优势，同时带来一系列灾难性问题，例如野指针问题、内存泄漏问题、内存碎片问题，在c++世界这是非常常见而棘手的问题，其实这些问题早有成熟应对方案，就以boost为例，早就包含相关库，有些已经成为c++标准库。c++解决内存方面的技术有： （1）智能指针：解决野指针、内存泄漏问题； （2）内存池：提升内存分配效率，解决内存碎片问题； （3）flyweight：解决大量重复对象">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/4e53ee30-5480-4bf3-bec1-8d74011acd61/index_files/1259d3cf-c465-4c5d-b1e7-de1f91b0ebef.png">
+<meta property="og:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/4e53ee30-5480-4bf3-bec1-8d74011acd61/index_files/3c04e371-3c52-414c-94c9-a922520d4cb9.png">
+<meta property="og:updated_time" content="2021-03-25T02:36:16.467Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="有用的c++内存相关库">
+<meta name="twitter:description" content="c++对内存的原始控制是其优势，同时带来一系列灾难性问题，例如野指针问题、内存泄漏问题、内存碎片问题，在c++世界这是非常常见而棘手的问题，其实这些问题早有成熟应对方案，就以boost为例，早就包含相关库，有些已经成为c++标准库。c++解决内存方面的技术有： （1）智能指针：解决野指针、内存泄漏问题； （2）内存池：提升内存分配效率，解决内存碎片问题； （3）flyweight：解决大量重复对象">
+<meta name="twitter:image" content="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/4e53ee30-5480-4bf3-bec1-8d74011acd61/index_files/1259d3cf-c465-4c5d-b1e7-de1f91b0ebef.png">
+  <link rel="canonical" href="http://zhongpan.tech/2020/02/06/025-useful-cpp-memory-related-libraries/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>有用的c++内存相关库 | 钟潘的博客</title>
+  
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?371e57c0f600bc023afbd347e274b788";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">钟潘的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="menu-item-icon fa fa-search fa-fw"></i> <br>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+  <a class="book-mark-link book-mark-link-fixed" href="#"></a>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://zhongpan.tech/2020/02/06/025-useful-cpp-memory-related-libraries/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="钟潘">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/logo.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="钟潘的博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">有用的c++内存相关库
+
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-02-06 16:19:12" itemprop="dateCreated datePublished" datetime="2020-02-06T16:19:12+08:00">2020-02-06</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-25 10:36:16" itemprop="dateModified" datetime="2021-03-25T10:36:16+08:00">2021-03-25</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/c/" itemprop="url" rel="index"><span itemprop="name">c++</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>c++对内存的原始控制是其优势，同时带来一系列灾难性问题，例如野指针问题、内存泄漏问题、内存碎片问题，在c++世界这是非常常见而棘手的问题，其实这些问题早有成熟应对方案，就以boost为例，早就包含相关库，有些已经成为c++标准库。c++解决内存方面的技术有：</p>
+<p>（1）智能指针：解决野指针、内存泄漏问题；</p>
+<p>（2）内存池：提升内存分配效率，解决内存碎片问题；</p>
+<p>（3）flyweight：解决大量重复对象对内存的浪费。</p>
+<p>下面通过一些实例介绍boost对上述技术的实现。</p>
+<a id="more"></a>
+<h2 id="boost智能指针">boost智能指针</h2>
+<p>boost智能指针已经成为c++11标准，是时候告别裸指针了。boost智能指针包括如下内容：</p>
+<ul>
+<li>智能指针模板类
+<ul>
+<li>scoped_ptr，scoped_array</li>
+<li>shared_ptr，shared_array（deprecated）</li>
+<li>weak_ptr</li>
+<li>intrusive_ptr</li>
+<li>local_shared_ptr</li>
+</ul>
+</li>
+<li>实用函数和类
+<ul>
+<li>make_shared</li>
+<li>make_unique</li>
+<li>allocate_unique</li>
+<li>enable_shared_from_this</li>
+<li>pointer_to_other</li>
+<li>static_pointer_cast</li>
+<li>intrusive_ref_counter</li>
+<li>atomic_shared_ptr</li>
+</ul>
+</li>
+</ul>
+<h3 id="使用示例">使用示例</h3>
+<h4 id="scoped-ptr">scoped_ptr</h4>
+<p>scoped_ptr适用于作用域内的指针管理，所有权不能转移出去，而标准库中的unique_ptr可以转移，这是两者的主要区别。</p>
+<p>先看不使用智能指针的例子，在每个退出或异常的地方需要不厌其烦的检查动态分配的对象是否释放，一旦漏掉一个地方就会导致内存或资源泄露。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">fun</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> *pInt = <span class="literal">NULL</span>;</span><br><span class="line">	<span class="keyword">try</span></span><br><span class="line">	&#123;</span><br><span class="line">		pInt = <span class="keyword">new</span> <span class="keyword">int</span>(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">bool</span> bOk = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">		<span class="comment">//do something</span></span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (!bOk)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (pInt != <span class="literal">NULL</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">delete</span> pInt;</span><br><span class="line">				pInt = <span class="literal">NULL</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">//do something</span></span><br><span class="line">		<span class="comment">//maybe throw exception</span></span><br><span class="line"></span><br><span class="line">		<span class="keyword">delete</span> pInt;</span><br><span class="line">		pInt = <span class="literal">NULL</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">catch</span>(...)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (pInt != <span class="literal">NULL</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">delete</span> pInt;</span><br><span class="line">			pInt = <span class="literal">NULL</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用智能指针改写后的例子，不但代码更加简洁，也完全杜绝了内存泄露的后顾之忧。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">fun</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">int</span> *pInt = <span class="literal">NULL</span>;</span><br><span class="line">	<span class="keyword">try</span></span><br><span class="line">	&#123;</span><br><span class="line">		boost::scoped_ptr&lt;<span class="keyword">int</span>&gt; pInt(<span class="keyword">new</span> <span class="keyword">int</span>(<span class="number">1</span>));</span><br><span class="line"></span><br><span class="line">		<span class="keyword">bool</span> bOk = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">		<span class="comment">//do something</span></span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (!bOk)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">//do something</span></span><br><span class="line">		<span class="comment">//maybe throw exception</span></span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">catch</span>(...)</span><br><span class="line">	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上述例子充分体现了智能指针中对RAII（resource acquisition is initialization）思想的运用，由一个临时对象持有裸指针，在临时对象销毁时同时释放裸指针指向的资源，而编译器可以很好的保证临时对象在各种情况下正确的销毁。从scoped_ptr的名字可以看出，它应用于离开某个作用域后需要资源自动释放的场景，因此scoped_ptr不像std::auto_ptr那样具有难以使用的所有权转让语义，也不像shared_ptr那样具有共享所有权语义，它将资源的生命周期仅仅限定在某个作用域内，这样的设计使它意图非常明确和简单，实际上scoped_ptr是不可复制的，当然就不能应用在容器中，因为它不需要转让所有权或共享所有权，因此在编译期就可以避免不正确的使用（不能将一个scoped_ptr赋值或拷贝构造给另一个scoped_ptr，也不能将scoped_ptr存储在容器中）。</p>
+<p>选择使用scoped_ptr还是std::auto_ptr？scoped_ptr和auto_ptr很像，只是auto_ptr多了所有权转让语义，例如可以作为函数返回值，除此之外，他们都是用栈上的对象管理堆上的对象，都不能共享所有权，因此都不能保存在容器中，但是scoped_ptr作了严格的控制（赋值和拷贝构造函数是私有的），确保了使用者不会误入歧途，而对于auto_ptr，只要你愿意，你还是可以将其放入容器中。所以，一般情况下最好使用scoped_ptr，如果你确实需要所有权转让语义，可以使用auto_ptr，但必须非常小心。</p>
+<h4 id="shared-ptr">shared_ptr</h4>
+<p>不使用智能指针的例子：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">std</span>::<span class="built_in">vector</span>&lt;<span class="keyword">int</span> *&gt; vecIntPtr;</span><br><span class="line"></span><br><span class="line">vecIntPtr.push_back(<span class="keyword">new</span> <span class="keyword">int</span>(<span class="number">1</span>));</span><br><span class="line">vecIntPtr.push_back(<span class="keyword">new</span> <span class="keyword">int</span>(<span class="number">2</span>));</span><br><span class="line">boost::mutex mtx;</span><br><span class="line"></span><br><span class="line"><span class="comment">//thread1</span></span><br><span class="line">&#123;</span><br><span class="line">	&#123;</span><br><span class="line">		boost::mutex::<span class="function">scoped_lock <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br><span class="line">		<span class="keyword">for</span>(<span class="built_in">std</span>::<span class="built_in">vector</span>&lt;<span class="keyword">int</span> *&gt;::iterator it = vecIntPtr.begin(); it != vecIntPtr.end(); ++it)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">delete</span> *it;</span><br><span class="line">		&#125;</span><br><span class="line">		vecIntPtr.clear();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//thread2</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">int</span> *pInt = <span class="literal">NULL</span>;</span><br><span class="line">	&#123;</span><br><span class="line">		boost::mutex::<span class="function">scoped_lock <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br><span class="line">		<span class="keyword">if</span> (!vecIntPtr.empty())</span><br><span class="line">		&#123;</span><br><span class="line">			pInt = *vecIntPtr.begin();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">          <span class="comment">//maybe need long time</span></span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (pInt)</span><br><span class="line">		&#123;</span><br><span class="line">			*pInt = <span class="number">3</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用shared_ptr改写后：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> boost::<span class="built_in">shared_ptr</span>&lt;<span class="keyword">int</span>&gt; IntPtr;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">vector</span>&lt;IntPtr&gt; vecIntPtr;</span><br><span class="line"></span><br><span class="line">vecIntPtr.push_back(IntPtr(<span class="keyword">new</span> <span class="keyword">int</span>(<span class="number">1</span>)));</span><br><span class="line">vecIntPtr.push_back(boost::make_shared&lt;<span class="keyword">int</span>&gt;(<span class="number">2</span>));</span><br><span class="line">boost::mutex mtx;</span><br><span class="line"></span><br><span class="line"><span class="comment">//thread1</span></span><br><span class="line">&#123;</span><br><span class="line">	&#123;</span><br><span class="line">		boost::mutex::<span class="function">scoped_lock <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br><span class="line">		vecIntPtr.clear();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//thread2</span></span><br><span class="line">&#123;</span><br><span class="line">	IntPtr pInt;</span><br><span class="line">	&#123;</span><br><span class="line">		boost::mutex::<span class="function">scoped_lock <span class="title">lock</span><span class="params">(mtx)</span></span>;</span><br><span class="line">		<span class="keyword">if</span> (!vecIntPtr.empty())</span><br><span class="line">		&#123;</span><br><span class="line">			pInt = *vecIntPtr.begin();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//maybe need long time</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (pInt)</span><br><span class="line">	&#123;</span><br><span class="line">		*pInt = <span class="number">3</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上例展示了多线程情形下访问同一份指针的情况。看出两份代码之间的区别了吗？</p>
+<ul>
+<li>
+<p>前面的代码需要显式的调用delete，而后面的代码不需要，其好处是显而易见的，在上述简单的例子中，也许你觉得不可能忘了delete 指针，但是在更复杂的系统中，忘了delete是屡见不鲜的，而查找此类问题需要花费高昂的代价；</p>
+</li>
+<li>
+<p>前面的代码需要在使用指针的整个过程加锁，即使从容器中获取了某个指针，以防其他线程将其删除，在使用指针的整个过程都需要加锁，如果这个过程非常耗时，那么可能带来系统效率的低下，而后面的代码仅仅是在从容器获取指针的过程需要加锁，这是由容器的性质决定的，STLport容器保证多线程读同一个容器是安全的，但不保证多线程写同一个容器是安全的，因此从容器获取指针的过程必须人为保证其安全性，但是一旦获取到了指针，后面对指针的使用过程就不需要加锁了，这是如何保证的呢， shared_ptr为每个裸指针维护一个引用计数，所有shared_ptr对象（临时对象或容器中的对象）共享裸指针和这个引用计数，创建一个shared_ptr对象时引用计数加1，对象销毁时引用计数减1，当引用计数为0时就说明已经没有人需要此裸指针了，此时正是裸指针生命结束的时候。因此只要你获取了shared_ptr对象，在使用过程中引用计数就肯定不可能为0，所以你可以放心的使用此指针。</p>
+</li>
+</ul>
+<p>需要注意的是：shared_ptr确保了指针本身使用的安全，指针内部数据的安全性仍需要使用者自己来保证，这不是智能指针关注的事情。</p>
+<p>另外注意到boost::make_shared的使用了吗？使用make_shared一方面可以去除new的显式调用，更重要的是可以获得性能的提升（原因见后），建议尽量使用make_shared，如果编译器支持右值引用，make_shared可以完美的将参数传给构造函数而没有任何性能的损失。</p>
+<p>关于shared_ptr的使用有几点是需要注意的：</p>
+<ul>
+<li>禁止some_operation (boost::shared_ptr(new T), return_int_operation())用法，因为参数求值顺序是不确定的，可能先执行new T，然后return_int_operation()，然后构造shared_ptr，如果return_int_operation()抛异常，那么就会出现内存泄漏；</li>
+<li>避免对shared_ptr所管理内存直接操作，以免重复释放；</li>
+<li>关于类型转换，只要 T* 能被隐式地转换到 U*，则 <code>shared_ptr&lt;T&gt;</code>就能被隐式地转换到<code>shared_ptr&lt;U&gt;</code>。特别是，<code>shared_ptr&lt;T&gt;</code>隐式转换到<code>shared_ptr&lt;T const&gt;</code>，当U是T的一个可访问基类的时候，还能转换到<code>shared_ptr&lt;U&gt;</code>，以及转换到<code>shared_ptr&lt;void&gt;</code>，另外可用如下函数类型转换：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">template&lt;class T, class U&gt;</span><br><span class="line">shared_ptr&lt;T&gt; static_pointer_cast(shared_ptr&lt;U&gt; const &amp; r); // never throws</span><br><span class="line"></span><br><span class="line">template&lt;class T, class U&gt;</span><br><span class="line">shared_ptr&lt;T&gt; const_pointer_cast(shared_ptr&lt;U&gt; const &amp; r); // never throws</span><br><span class="line"></span><br><span class="line">template&lt;class T, class U&gt;</span><br><span class="line">shared_ptr&lt;T&gt; dynamic_pointer_cast(shared_ptr&lt;U&gt; const &amp; r); // never throws</span><br></pre></td></tr></table></figure>
+<ul>
+<li>所有共享同一裸指针的shared_ptr必须同源，例如不能出现如下代码：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">int *p = new int(10);   </span><br><span class="line">boost::shared_ptr&lt;int&gt; sp1(p);   </span><br><span class="line">boost::shared_ptr&lt;int&gt; sp2(p);</span><br></pre></td></tr></table></figure>
+<p>应该是：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">int *p = new int(10);   </span><br><span class="line">boost::shared_ptr&lt;int&gt; sp1(p);   </span><br><span class="line">boost::shared_ptr&lt;int&gt; sp2 = sp1;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>不要直接使用容器中的智能指针。</li>
+</ul>
+<h4 id="weak-ptr">weak_ptr</h4>
+<p>看出下面的代码有什么问题了吗？初始后临时对象father和son的引用计数都是2，当father和son销毁后，引用计数变为1，之后再也没有可能变成0了，于是产生了内存泄露。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CFather</span>;</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CSon</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> boost::<span class="built_in">shared_ptr</span>&lt;CFather&gt; FatherPtr;</span><br><span class="line"><span class="keyword">typedef</span> boost::<span class="built_in">shared_ptr</span>&lt;CSon&gt; SonPtr;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CFather</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	SonPtr m_son;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CSon</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	FatherPtr m_father;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function">FatherPtr <span class="title">father</span><span class="params">(<span class="keyword">new</span> CFather)</span></span>;</span><br><span class="line"><span class="function">SonPtr <span class="title">son</span><span class="params">(<span class="keyword">new</span> CSon)</span></span>;</span><br><span class="line">father-&gt;m_son = son;</span><br><span class="line">son-&gt;m_father = father;</span><br></pre></td></tr></table></figure>
+<p>为了解决循环引用带来的内存无法释放的问题，weak_ptr产生了，只要将循环引用中的一环改为weak_ptr，问题就迎刃而解了。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CFather</span>;</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CSon</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> boost::<span class="built_in">shared_ptr</span>&lt;CFather&gt; FatherPtr;</span><br><span class="line"><span class="keyword">typedef</span> boost::<span class="built_in">shared_ptr</span>&lt;CSon&gt; SonPtr;</span><br><span class="line"><span class="keyword">typedef</span> boost::weak_ptr&lt;CSon&gt; SonWeakPtr;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CFather</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	SonWeakPtr m_son;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CSon</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	FatherPtr m_father;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function">FatherPtr <span class="title">father</span><span class="params">(<span class="keyword">new</span> CFather)</span></span>;</span><br><span class="line"><span class="function">SonPtr <span class="title">son</span><span class="params">(<span class="keyword">new</span> CSon)</span></span>;</span><br><span class="line">father-&gt;m_son = son;</span><br><span class="line">son-&gt;m_father = father;</span><br><span class="line"></span><br><span class="line"><span class="comment">//how to access weak_ptr</span></span><br><span class="line">&#123;</span><br><span class="line">	SonPtr son = father-&gt;m_son.lock();</span><br><span class="line">	<span class="keyword">if</span> (son)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">//do something</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们来看看它是如何工作的：</p>
+<ul>
+<li>
+<p>weak_ptr必须由shared_ptr或其他weak_ptr初始化，weak_ptr只是作为shared_ptr的观察者，不会导致shared_ptr的引用计数加1；</p>
+</li>
+<li>
+<p>在每次使用指针时，还是要获取shared_ptr，方法是调用lock成员函数，实际上，weak_ptr没有重载*和-&gt;，也没有提供get来获取裸指针，所以它是安全的。</p>
+</li>
+</ul>
+<p>那么重写后的代码，是不是解决了内存泄露的问题呢？初始后father的引用计数为2，son为1，son销毁后引用计数变为0，从而会释放son持有的CSon指针，同时CSon的成员m_father也会析构，father的引用计数变为1，father销毁后引用计数变为0，最终father持有的CFather指针得到释放。</p>
+<h4 id="intrusive-ptr">intrusive_ptr</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CSharedObject</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	CSharedObject() : m_ulCnt(<span class="number">0</span>)</span><br><span class="line">	&#123;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">AddRef</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		InterlockedIncrement((<span class="keyword">long</span> *)&amp;m_ulCnt);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="title">ReleaseRef</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">return</span> InterlockedDecrement((<span class="keyword">long</span> *)&amp;m_ulCnt);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">long</span> m_ulCnt;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CMyObject</span> :</span> <span class="keyword">public</span> CSharedObject</span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> boost::intrusive_ptr&lt;CMyObject&gt; MyObjectPtr; </span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">intrusive_ptr_release</span><span class="params">(CMyObject *p)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (p-&gt;ReleaseRef() == <span class="number">0</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">delete</span> p;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">intrusive_ptr_add_ref</span><span class="params">(CMyObject *p)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	p-&gt;AddRef();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>intrusive_ptr用于存储带有侵入式引用计数对象的指针，使用时定义<code>boost::intrusive_ptr&lt;T&gt;</code>的同时，还要定义void intrusive_ptr_add_ref(T*) 和void intrusive_ptr_release(T *)，intrusive_ptr保证需要增加引用计数时调用intrusive_ptr_add_ref，需要减小引用计数时调用intrusive_ptr_release。</p>
+<p>使用intrusive_ptr的主要原因有：</p>
+<ul>
+<li>
+<p>一些已有的 frameworks 和操作系统提供带有侵入式引用计数的对象；</p>
+</li>
+<li>
+<p>intrusive_ptr 的内存占用量和相应的裸指针一样；</p>
+</li>
+<li>
+<p><code>intrusive_ptr&lt;T&gt;</code> 能够从任意一个类型为 T * 的裸指针构造出来。</p>
+</li>
+</ul>
+<h4 id="scoped-array">scoped_array</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// scoped_array</span></span><br><span class="line"><span class="keyword">typedef</span> boost::scoped_array&lt;<span class="keyword">int</span>&gt; IntArrayPtr;</span><br><span class="line"></span><br><span class="line"><span class="function">IntArrayPtr <span class="title">intArrayPtr</span><span class="params">(<span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">10</span>])</span></span>;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</span><br><span class="line">&#123;</span><br><span class="line">	intArrayPtr[i] = i;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">intArrayPtr[<span class="number">10</span>] = <span class="number">10</span>; <span class="comment">//no check</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// scoped_ptr to vector</span></span><br><span class="line"><span class="keyword">typedef</span> boost::scoped_ptr&lt;<span class="built_in">std</span>::<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; &gt; IntArrayPtr;</span><br><span class="line"></span><br><span class="line"><span class="function">IntArrayPtr <span class="title">intArrayPtr</span><span class="params">(<span class="keyword">new</span> <span class="built_in">std</span>::<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;(<span class="number">10</span>))</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</span><br><span class="line">&#123;</span><br><span class="line">	(*intArrayPtr)[i] = i;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">(*intArrayPtr)[<span class="number">10</span>] = <span class="number">10</span>; <span class="comment">//no check</span></span><br><span class="line">intArrayPtr-&gt;at(<span class="number">10</span>) = <span class="number">10</span>; <span class="comment">//have check</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// shared_array</span></span><br><span class="line"><span class="keyword">typedef</span> boost::shared_array&lt;<span class="keyword">int</span>&gt; IntArrayPtr;</span><br><span class="line"></span><br><span class="line"><span class="function">IntArrayPtr <span class="title">intArrayPtr</span><span class="params">(<span class="keyword">new</span> <span class="keyword">int</span>[<span class="number">10</span>])</span></span>;</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</span><br><span class="line">&#123;</span><br><span class="line">	intArrayPtr[i] = i;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">intArrayPtr[<span class="number">10</span>] = <span class="number">10</span>; <span class="comment">//no check</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// shared_ptr to vector</span></span><br><span class="line"><span class="keyword">typedef</span> boost::<span class="built_in">shared_ptr</span>&lt;<span class="built_in">std</span>::<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; &gt; IntArrayPtr;</span><br><span class="line"></span><br><span class="line"><span class="function">IntArrayPtr <span class="title">intArrayPtr</span><span class="params">(<span class="keyword">new</span> <span class="built_in">std</span>::<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;(<span class="number">10</span>))</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</span><br><span class="line">&#123;</span><br><span class="line">	(*intArrayPtr)[i] = i;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">(*intArrayPtr)[<span class="number">10</span>] = <span class="number">10</span>; <span class="comment">//no check</span></span><br><span class="line">intArrayPtr-&gt;at(<span class="number">10</span>) = <span class="number">10</span>; <span class="comment">//have check</span></span><br></pre></td></tr></table></figure>
+<p>scoped_array和shared_array是专门管理用new T[]分配的指针的，它们都重载了[]操作符，没有重载*和-&gt;操作符，使用scoped_array和shared_ptr确保了在删除时相应的使用delete []。实际上scoped_array和shared_array完全可以用vector来代替C数组，见上述示例代码。</p>
+<h3 id="原理">原理</h3>
+<p>用一个自己实现的简单版本来说明一下shared_ptr的原理：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MySmartPtr</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	T * <span class="keyword">operator</span> -&gt;() <span class="keyword">const</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> m_pData;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	T &amp; <span class="keyword">operator</span> *()</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> *m_pData;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	MySmartPtr()</span><br><span class="line">	&#123;</span><br><span class="line">		m_pData = <span class="literal">NULL</span>;</span><br><span class="line">		m_piCnt = <span class="literal">NULL</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">explicit</span> <span class="title">MySmartPtr</span><span class="params">(T * pData)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		m_pData = pData;</span><br><span class="line">		m_piCnt = <span class="keyword">new</span> <span class="keyword">int</span>(<span class="number">0</span>);</span><br><span class="line">		InterlockedIncrement((<span class="keyword">long</span>*)m_piCnt);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	MySmartPtr &amp; <span class="keyword">operator</span>=(<span class="keyword">const</span> MySmartPtr &amp; other)</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (<span class="keyword">this</span> != &amp;other &amp;&amp; m_pData != other.m_pData)</span><br><span class="line">		&#123;</span><br><span class="line">			destroy();</span><br><span class="line">			m_pData = other.m_pData;</span><br><span class="line">			m_piCnt = other.m_piCnt;</span><br><span class="line">			InterlockedIncrement((<span class="keyword">long</span>*)m_piCnt);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	MySmartPtr(<span class="keyword">const</span> MySmartPtr &amp; other)</span><br><span class="line">	&#123;</span><br><span class="line">		m_pData = <span class="literal">NULL</span>;</span><br><span class="line">		m_piCnt = <span class="literal">NULL</span>;</span><br><span class="line">		*<span class="keyword">this</span> = other;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	~MySmartPtr()</span><br><span class="line">	&#123;</span><br><span class="line">		destroy();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">destroy</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (m_piCnt &amp;&amp; *m_piCnt &gt; <span class="number">0</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (InterlockedDecrement((<span class="keyword">long</span>*)m_piCnt) == <span class="number">0</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">delete</span> m_pData;</span><br><span class="line">				m_pData = <span class="literal">NULL</span>;</span><br><span class="line">				<span class="keyword">delete</span> m_piCnt;</span><br><span class="line">				m_piCnt = <span class="literal">NULL</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	T *m_pData;</span><br><span class="line">	<span class="keyword">int</span> *m_piCnt;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>智能指针所运用的基本原理包括：</p>
+<p>（1）  重载*和-&gt;操作符，是其用法和裸指针的使用方法一致；</p>
+<p>（2）  智能指针对象的析构函数中判断裸指针是否删除，RAII思想的运用；</p>
+<p>（3）  shared_ptr使用一个共享的引用计数决定何时删除裸指针（见示例）。</p>
+<h3 id="性能">性能</h3>
+<p>shared_ptr的性能是使用者比较关心的问题。而这个问题也早已经过广泛的讨论和试验，问题的核心集中在引用计数的实现方式，boost文档中记述的一些开发人员所做的试验，试验中测试了5种实现方式：</p>
+<ol>
+<li>Counted pointer using a heap allocated     reference count, this is referred to as simple counted.</li>
+<li>Counted pointer using a special purpose     allocator for the reference count - special counted.</li>
+<li>Counted pointer using an intrusive     reference count - intrusive.</li>
+<li>Linked pointer as described above - linked.</li>
+<li>Cyclic pointer, a counted implementation     using a std::deque for allocation with provision for weak pointers and     garbage collection of cycles of pointers - cyclic.</li>
+</ol>
+<p>从两个方面进行了试验：</p>
+<p>Two tests were run: the first aimed to obtain timings for two basic individual operations:</p>
+<ol>
+<li>Initial construction from raw pointer.</li>
+<li>An amortized copy operation consisting of     half an assignment and half a copy construction - designed to reflect average     usage.</li>
+</ol>
+<p>The second attempted to gain more insight into normal usage by timing the fill and sort algorithms for vectors and lists filled with the various smart pointers.</p>
+<p>试验环境：</p>
+<p>on two compilers:</p>
+<ol>
+<li>MSVC 6.0 service pack 3, using default     release optimization mode (/O2 - optimized for speed, no inlining of     functions defined outside a class body unless specified as inline).</li>
+<li>gcc 2.95.2 using full optimization (-O3     -DNDEBUG).</li>
+</ol>
+<p>Additionally, generated pointer sizes (taking into account struct alignment) were compared, as were generated code sizes for MSVC mainly by manual inspection of generated assembly code - a necessity due to function inlining.</p>
+<p>All tests were run on a PII-200 running Windows NT version 4.0</p>
+<p>第一个试验结果：</p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/4e53ee30-5480-4bf3-bec1-8d74011acd61/index_files/1259d3cf-c465-4c5d-b1e7-de1f91b0ebef.png" alt="MSVC speed graph"></p>
+<p><img src="https://vipkshttps10.wiz.cn/ks/share/resources/21bc5c20-0069-11ea-836e-1bec6edb5295/4e53ee30-5480-4bf3-bec1-8d74011acd61/index_files/3c04e371-3c52-414c-94c9-a922520d4cb9.png" alt="GCC speed graph"></p>
+<p>单位：纳秒</p>
+<p>MSVC</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>initialization</th>
+<th>copy operation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>simple counted</td>
+<td>3000 +/- 170</td>
+<td>104 +/- 31</td>
+</tr>
+<tr>
+<td>special counted</td>
+<td>1330 +/- 50</td>
+<td>85 +/- 9</td>
+</tr>
+<tr>
+<td>intrusive</td>
+<td>1000 +/- 20</td>
+<td>71 +/- 3</td>
+</tr>
+<tr>
+<td>linked</td>
+<td>970 +/- 60</td>
+<td>136 +/- 10</td>
+</tr>
+<tr>
+<td>cyclic</td>
+<td>1290 +/- 70</td>
+<td>112 +/- 12</td>
+</tr>
+<tr>
+<td>dumb</td>
+<td>1020 +/- 20</td>
+<td>10 +/- 4</td>
+</tr>
+<tr>
+<td>raw</td>
+<td>1038 +/- 30</td>
+<td>10 +/- 5</td>
+</tr>
+</tbody>
+</table>
+<p>GCC</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>initialization</th>
+<th>copy operation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>simple counted</td>
+<td>4620 +/- 150</td>
+<td>301 +/- 28</td>
+</tr>
+<tr>
+<td>special counted</td>
+<td>1990 +/- 40</td>
+<td>264 +/- 7</td>
+</tr>
+<tr>
+<td>intrusive</td>
+<td>1590 +/- 70</td>
+<td>181 +/- 12</td>
+</tr>
+<tr>
+<td>linked</td>
+<td>1470 +/- 140</td>
+<td>345 +/- 26</td>
+</tr>
+<tr>
+<td>cyclic</td>
+<td>2180 +/- 100</td>
+<td>330 +/- 18</td>
+</tr>
+<tr>
+<td>dumb</td>
+<td>1590 +/- 70</td>
+<td>74 +/- 12</td>
+</tr>
+<tr>
+<td>raw</td>
+<td>1430 +/- 60</td>
+<td>27 +/- 11</td>
+</tr>
+</tbody>
+</table>
+<p>第二个试验结果：</p>
+<p>单位：秒</p>
+<p>GCC</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>vector</th>
+<th>list</th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>fill</td>
+<td>sort</td>
+<td>fill</td>
+<td>sort</td>
+</tr>
+<tr>
+<td>simple counted</td>
+<td>46.54</td>
+<td>2.44</td>
+<td>47.09</td>
+<td>3.22</td>
+</tr>
+<tr>
+<td>special counted</td>
+<td>14.02</td>
+<td>2.83</td>
+<td>7.28</td>
+<td>3.21</td>
+</tr>
+<tr>
+<td>intrusive</td>
+<td>12.15</td>
+<td>1.91</td>
+<td>7.99</td>
+<td>3.08</td>
+</tr>
+<tr>
+<td>linked</td>
+<td>12.46</td>
+<td>2.32</td>
+<td>8.14</td>
+<td>3.27</td>
+</tr>
+<tr>
+<td>cyclic</td>
+<td>22.60</td>
+<td>3.19</td>
+<td>1.63</td>
+<td>3.18</td>
+</tr>
+<tr>
+<td>raw</td>
+<td>11.81</td>
+<td>0.24</td>
+<td>27.51</td>
+<td>0.77</td>
+</tr>
+</tbody>
+</table>
+<p>MSVC</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>vector</th>
+<th>list</th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>fill</td>
+<td>sort</td>
+<td>fill</td>
+<td>sort</td>
+</tr>
+<tr>
+<td>simple counted</td>
+<td>1.83</td>
+<td>2.37</td>
+<td>1.86</td>
+<td>4.85</td>
+</tr>
+<tr>
+<td>special counted</td>
+<td>1.04</td>
+<td>2.35</td>
+<td>1.38</td>
+<td>4.58</td>
+</tr>
+<tr>
+<td>intrusive</td>
+<td>1.04</td>
+<td>1.84</td>
+<td>1.16</td>
+<td>4.29</td>
+</tr>
+<tr>
+<td>linked</td>
+<td>1.08</td>
+<td>2.00</td>
+<td>1.21</td>
+<td>4.33</td>
+</tr>
+<tr>
+<td>cyclic</td>
+<td>1.38</td>
+<td>2.84</td>
+<td>1.47</td>
+<td>4.73</td>
+</tr>
+<tr>
+<td>raw</td>
+<td>0.67</td>
+<td>0.28</td>
+<td>1.24</td>
+<td>1.81</td>
+</tr>
+</tbody>
+</table>
+<p>结论：</p>
+<p>The timing results mainly speak for themselves: clearly an intrusive pointer outperforms all others and a simple heap based counted pointer has poor performance relative to other implementations. The selection of an optimal non-intrusive smart pointer implementation is more application dependent, however. Where small numbers of copies are expected, it is likely that the linked implementation will be favoured. Conversely, for larger numbers of copies a counted pointer with some type of special purpose allocator looks like a win. Other factors to bear in mind are: -</p>
+<p>Deterministic individual, as opposed to amortized, operation time. This weighs against any implementation depending on an allocator.</p>
+<p>Multithreaded synchronization. This weighs against an implementation which spreads its information as in the case of linked pointer.</p>
+<p>根据以上试验可以看出相比于裸指针，shared_ptr性能地损失主要来自两方面：一方面是第一次初始化时需要额外分配引用计数，另一方面是赋值或拷贝时引用计数的更新等，而前者的损失是主要的。试验结果表明带有侵入式引用计数的实现胜过其他实现，但是大多数应用更依赖于非侵入式引用计数的实现。boost::shared_ptr就是非侵入式实现，其默认实现属于simple counted，通过传入自定义的分配器，也可以实现special counted方式引用计数，除非对时间特别关键的应用，默认的实现完全可以满足要求。另外在初始化时使用工厂方法boost::make_shared(或boost::allocate_shared)可以获得和侵入式接近的性能，因为boost::make_shared使用了一个placement new来分配T，这样相当于节省了分配引用计数的时间。关于是否可以将智能指针作为函数参数传递，上述试验中的simple counted实现正是用了一个默认的boost::shared_ptr，其拷贝的时间确实比裸指针多很多（在PII-200机器上是104纳秒，裸指针是10纳秒），但是毕竟也是纳秒级别，实际使用时的性能损失应该基本觉察不到。boost::shared_ptr的默认实现是采用lock-free的整数原子操作进行的引用计数增减，试验并未评估在复杂的多线程或异步环境中对系统造成的性能损失。</p>
+<h2 id="boost内存池">boost内存池</h2>
+<p>内存池用于管理大量小对象，避免频繁在堆上分配。boost内存池包含如下内容：</p>
+<ul>
+<li>pool</li>
+<li>object_pool</li>
+<li>singleton_pool</li>
+<li>pool_allocator</li>
+</ul>
+<h3 id="使用示例-v2">使用示例</h3>
+<h4 id="pool">pool</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">boost::pool&lt;&gt; FixSizeMemPool(<span class="keyword">sizeof</span>(<span class="keyword">int</span>), <span class="number">32</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> *pInt = (<span class="keyword">int</span> *)FixSizeMemPool.<span class="built_in">malloc</span>();</span><br><span class="line"></span><br><span class="line">FixSizeMemPool.<span class="built_in">free</span>(pInt);</span><br><span class="line"></span><br><span class="line">pInt = (<span class="keyword">int</span> *)FixSizeMemPool.<span class="built_in">malloc</span>();</span><br><span class="line"></span><br><span class="line">FixSizeMemPool.ordered_free(pInt);</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> *pIntArray = (<span class="keyword">int</span> *)FixSizeMemPool.ordered_malloc(<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line">FixSizeMemPool.ordered_free(pIntArray, <span class="number">10</span>);</span><br><span class="line"></span><br><span class="line">pIntArray = (<span class="keyword">int</span> *)FixSizeMemPool.ordered_malloc(<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line">FixSizeMemPool.<span class="built_in">free</span>(pIntArray, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
+<p>boost::pool是用来快速分配固定大小内存快的内存池，构造函数的第一个参数是希望从内存池中每次获取的区块(chunk)的大小，第二个参数表示每次空间不够后再次分配的区块个数（next_chunk_num），为默认参数，默认值为 32。第一次调用malloc或ordered_malloc时进行第一次分配，分配能容纳next_chunk_num个区块的内存快(block)，然后将next_chunk_num乘以2，也就是说下一次分配的内存快能容纳的区块个数翻倍，依次类推。malloc是从内存池中分配一个区块，如果失败返回0；ordered_malloc是从内存池中分配连续的区块，如果失败也是返回0；分配的区块不再使用后通过free返还给内存池；特别的ordered_free保证对返还后的空闲区块排序，以保证之后使用ordered_malloc分配连续区块的机会更大，所以ordered_free的时间复杂度不是O(1)，如果你经常会使用ordered_malloc，最好在释放时使用ordered_free。FixSizeMemPool销毁时保证所有分配的内存得到释放，即使没有调用free或ordered_free，也因此boost::pool不是线程安全的，它不是设计用来多个模块共享的。</p>
+<h4 id="object-pool">object_pool</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">X</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	X(<span class="keyword">int</span> i)</span><br><span class="line">	&#123;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br><span class="line">boost::object_pool&lt;X&gt; ObjectPool(<span class="number">32</span>);</span><br><span class="line"></span><br><span class="line">X *pX = ObjectPool.construct(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">ObjectPool.destroy(pX);</span><br></pre></td></tr></table></figure>
+<p>boost::object_pool是从boost::pool继承而来，构造函数只有一个参数即next_chunk_num，和boost::pool的主要区别是boost::object_pool在获取到区块后，使用了一次placement new对区块进行了构造，之后返回了<code>T *</code>而不是<code>void *</code>，这是通过调用construct进行的，construct默认支持3个参数，如果想传入更多参数，需要修改boost/pool/detail/pool_construct_simple.inc文件。相应的调用destroy，会先进行析购，然后回收内存。当然也可以调用malloc/free（没有ordered_malloc/ordered_free），但不推荐，因为ObjectPool在销毁时会自动调用没有free的区块的析购函数，如果在malloc后，用户自己没有对区块进行构造，而又没有调用free，那么最后在其上调用一次析购函数可能产生错误。</p>
+<h4 id="singleton-pool">singleton_pool</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">MyPoolTag</span>&#123;</span>&#125;;</span><br><span class="line"><span class="keyword">typedef</span> boost::singleton_pool&lt;MyPoolTag, <span class="keyword">sizeof</span>(<span class="keyword">int</span>)&gt; MyPool;</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> *pInt = (<span class="keyword">int</span> *)MyPool::<span class="built_in">malloc</span>();</span><br><span class="line"></span><br><span class="line">MyPool::<span class="built_in">free</span>(pInt);</span><br><span class="line"></span><br><span class="line"><span class="keyword">int</span> *pIntArray = (<span class="keyword">int</span> *)MyPool::ordered_malloc(<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line">MyPool::ordered_free(pIntArray, <span class="number">10</span>);</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">OtherPoolTag</span>&#123;</span>&#125;;</span><br><span class="line"><span class="keyword">typedef</span> boost::singleton_pool&lt;OtherPoolTag, <span class="number">10</span>, </span><br><span class="line">	boost::default_user_allocator_new_delete, </span><br><span class="line">	boost::mutex, </span><br><span class="line">	<span class="number">32</span>&gt; OtherPool;</span><br></pre></td></tr></table></figure>
+<p>boost::singleton_pool是被设计用来在多个模块间共享的，所以是线程安全的。使用singleton模式实现，并且其singleton静态对象也是线程安全的。使用singleton_pool时不用定义对象，malloc/ordered_malloc/free/ordered_free都是静态的，调用方法和boost::pool相同。OtherPool的定义展示了boost::singleton_pool的全貌，10表示请求区块大小；boost::default_user_allocator_new_delete为分配器，默认值也是它，用户可定义其他的分配器；boost::mutex是为了保证线程安全使用的锁，默认为details::pool::default_mutex；32为next_chunk_num。</p>
+<h4 id="pool-allocator">pool_allocator</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">std</span>::<span class="built_in">vector</span>&lt;<span class="keyword">int</span>, boost::pool_allocator&lt;<span class="keyword">int</span>&gt; &gt; vecInt;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">&#123;</span><br><span class="line">	vecInt.push_back(i);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">boost::singleton_pool&lt;boost::pool_allocator_tag, <span class="keyword">sizeof</span>(<span class="keyword">int</span>)&gt;::release_memory();</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">vector</span>&lt;<span class="keyword">int</span>, boost::pool_allocator&lt;<span class="keyword">int</span>, boost::default_user_allocator_new_delete, boost::mutex, 32&gt; &gt; otherVecInt;</span><br></pre></td></tr></table></figure>
+<p>boost::pool_allocator提供了符合标准的分配器，可用于STL容器。boost::pool_allocator内部实际是使用singleton_pool进行的内存分配，所以如果想手工释放内存可以像上例中使用boost::singleton_pool&lt;boost::pool_alocator_tag, sizeof(int)&gt;::release_memory()。</p>
+<h4 id="boost智能指针和内存池的结合使用">boost智能指针和内存池的结合使用</h4>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SmartPool</span> :</span> <span class="keyword">public</span> boost::noncopyable</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line"></span><br><span class="line">	<span class="keyword">typedef</span> boost::<span class="built_in">shared_ptr</span>&lt;T&gt; SmartObjectPtr;	</span><br><span class="line"></span><br><span class="line">	<span class="function">SmartObjectPtr <span class="title">ConstructSmartObject</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		boost::mutex::<span class="function">scoped_lock <span class="title">lock</span><span class="params">(m_mtx)</span></span>;</span><br><span class="line">		<span class="keyword">return</span> SmartObjectPtr(m_objpool.construct(), </span><br><span class="line">			boost::bind(&amp;SmartPool::DestroySmartObject, <span class="keyword">this</span>, _1),</span><br><span class="line">			boost::pool_allocator&lt;boost::detail::sp_counted_base&gt;());</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">DestroySmartObject</span><span class="params">(T *p)</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		m_objpool.destroy(p);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	boost::object_pool&lt;T&gt; m_objpool;</span><br><span class="line">	boost::mutex m_mtx;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">X</span>&#123;</span>&#125;;</span><br><span class="line">SmartPool&lt;X&gt; XSmartPool;</span><br><span class="line">SmartPool&lt;X&gt;::SmartObjectPtr objPtr = XSmartPool.ConstructSmartObject();</span><br></pre></td></tr></table></figure>
+<p>上例展示了将boost智能指针和内存池结合使用的方法。上述方法的限制是要求X有默认构造函数，另外必须XSmartPool在所有智能指针之后释放，当然这两个限制是有方法解决的，大家可以自己想一想。</p>
+<h3 id="原理-v2">原理</h3>
+<p>对于固定大小内存池的实现原理并不复杂，即预先分配一些内存块，每个内存快被划分成相同大小的区块，这些区块被链接在一个空闲链条中，当要分配内存时，从空闲区块头取出一个，如果没有空闲的，则分配新的内存快，当不再使用区块时，将其加入到空闲链表中即可，所以保证了分配和释放的时间复杂度是常量的（除第一次分配或之后追加分配时），肯定比直接使用new分配要快。boost内存池的增长方式是，第一次调用malloc*时分配一个内存快，可容纳若干（可配）个区块，以后每次不够时，再分配一个内存快，大小是前一次的两倍。boost内存池还提供了分配连续区块的接口，为了保证每次分配连续区块成功的机会更大，在释放时提供了排序的释放方法，当然其时间复杂度就不是常量了。boost内存池还保证了内存对齐，可广泛适用于不同平台。</p>
+<h4 id="内存布局">内存布局</h4>
+   <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">	</span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Pool</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">void</span> *firstBlock;</span><br><span class="line">	<span class="keyword">void</span> *firstFreeChunk;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Block</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">union</span> Chunk</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">void</span> *nextChunk;</span><br><span class="line">		<span class="keyword">char</span> chunk[chunk_size];</span><br><span class="line">	&#125; Chunks[chunk_num];</span><br><span class="line">	<span class="keyword">void</span> *nextBlock;</span><br><span class="line">	size_type nextBlockSize;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>每个内存快（Block）的布局如上所示（上述代码仅是为了说明问题的伪代码，真实源代码并不是这样），首先是若干个连续的区块，然后是下一个内存快的指针，最后是下一个内存快的大小。这里比较有意思的一个技巧是复用了区块中的内存存储了下一个区块的指针，将区块链接起来。</p>
+<h4 id="内存对齐">内存对齐</h4>
+<p>boost内存对齐使用了最小公倍数方法（具体推导过程见boost文档），保证了在各种复杂环境下内存的对齐。这一点也是我们自己实现内存池容易忽视的一个问题。</p>
+<h2 id="boost-flyweight">boost::flyweight</h2>
+<p>在《设计模式》一书中描述了flyweight模式，boost::flyweight得名于此。</p>
+<h3 id="使用示例-v3">使用示例</h3>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">user_entry</span></span></span><br><span class="line"><span class="class">&#123;</span>  </span><br><span class="line">	<span class="built_in">std</span>::<span class="built_in">string</span> first_name;  </span><br><span class="line">	<span class="built_in">std</span>::<span class="built_in">string</span> last_name;  </span><br><span class="line">	<span class="keyword">int</span> age;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">user_entry</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	boost::flyweight&lt;<span class="built_in">std</span>::<span class="built_in">string</span>&gt; first_name;</span><br><span class="line">	boost::flyweight&lt;<span class="built_in">std</span>::<span class="built_in">string</span>&gt; last_name;</span><br><span class="line">	<span class="keyword">int</span> age;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">user_entry ue1;</span><br><span class="line">ue1.first_name = <span class="string">"zhang"</span>;</span><br><span class="line">ue1.last_name = <span class="string">"xxx"</span>;</span><br><span class="line"></span><br><span class="line">user_entry ue2;</span><br><span class="line">ue2.first_name = <span class="string">"zhang"</span>;</span><br><span class="line">ue2.last_name = <span class="string">"yyy"</span>;</span><br><span class="line"></span><br><span class="line">user_entry ue3;</span><br><span class="line">ue3.first_name = <span class="string">"zhang"</span>;</span><br><span class="line">ue3.last_name = <span class="string">"yyy"</span>;</span><br></pre></td></tr></table></figure>
+<p>boost::flyweight的使用非常简单，大多数时候只需要修改一下结构体的定义，就能带来内存的节省，当冗余度越大时，内存节省越明显，例如上例，使用boost::flyweight后，内存中只有一份“zhang”，当有成千上万个这样的对象时，姓相同的比例非常大，这样就能节省很多内存。</p>
+
+    </div>
+
+    
+    
+    
+    
+    <div>
+      
+        <div>
+    
+        <div style="text-align:center;color: #ccc;font-size:14px;">-------------本文结束<i class="fa fa-hourglass-end"></i>感谢您的阅读-------------</div>
+    
+</div>
+
+      
+    </div>
+        
+      
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>钟潘</li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://zhongpan.tech/2020/02/06/025-useful-cpp-memory-related-libraries/" title="有用的c++内存相关库">http://zhongpan.tech/2020/02/06/025-useful-cpp-memory-related-libraries/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY</a> 许可协议。转载请注明出处！</li>
+</ul>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/c/" rel="tag"><i class="fa fa-tag"></i> c++</a>
+            
+              <a href="/tags/boost/" rel="tag"><i class="fa fa-tag"></i> boost</a>
+            
+              <a href="/tags/memory/" rel="tag"><i class="fa fa-tag"></i> memory</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/01/31/023-python-refactor-rename-failur-in-vscode/" rel="next" title="vscode中对python进行修改符号名重构时总是失败">
+                  <i class="fa fa-chevron-left"></i> vscode中对python进行修改符号名重构时总是失败
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2020/02/22/026-development-management-with-airtable/" rel="prev" title="使用在线表格airtable进行软件开发管理">
+                  使用在线表格airtable进行软件开发管理 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    
+  <div class="comments" id="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC80NDgzMy8yMTM1NA=="></div>
+  </div>
+  
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#boost智能指针"><span class="nav-number">1.</span> <span class="nav-text">boost智能指针</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用示例"><span class="nav-number">1.1.</span> <span class="nav-text">使用示例</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#scoped-ptr"><span class="nav-number">1.1.1.</span> <span class="nav-text">scoped_ptr</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#shared-ptr"><span class="nav-number">1.1.2.</span> <span class="nav-text">shared_ptr</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#weak-ptr"><span class="nav-number">1.1.3.</span> <span class="nav-text">weak_ptr</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#intrusive-ptr"><span class="nav-number">1.1.4.</span> <span class="nav-text">intrusive_ptr</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#scoped-array"><span class="nav-number">1.1.5.</span> <span class="nav-text">scoped_array</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#原理"><span class="nav-number">1.2.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#性能"><span class="nav-number">1.3.</span> <span class="nav-text">性能</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#boost内存池"><span class="nav-number">2.</span> <span class="nav-text">boost内存池</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用示例-v2"><span class="nav-number">2.1.</span> <span class="nav-text">使用示例</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#pool"><span class="nav-number">2.1.1.</span> <span class="nav-text">pool</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#object-pool"><span class="nav-number">2.1.2.</span> <span class="nav-text">object_pool</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#singleton-pool"><span class="nav-number">2.1.3.</span> <span class="nav-text">singleton_pool</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#pool-allocator"><span class="nav-number">2.1.4.</span> <span class="nav-text">pool_allocator</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#boost智能指针和内存池的结合使用"><span class="nav-number">2.1.5.</span> <span class="nav-text">boost智能指针和内存池的结合使用</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#原理-v2"><span class="nav-number">2.2.</span> <span class="nav-text">原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#内存布局"><span class="nav-number">2.2.1.</span> <span class="nav-text">内存布局</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存对齐"><span class="nav-number">2.2.2.</span> <span class="nav-text">内存对齐</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#boost-flyweight"><span class="nav-number">3.</span> <span class="nav-text">boost::flyweight</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用示例-v3"><span class="nav-number">3.1.</span> <span class="nav-text">使用示例</span></a></li></ol></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/logo.png"
+      alt="钟潘">
+  <p class="site-author-name" itemprop="name">钟潘</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">42</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/zhongpan" title="GitHub &rarr; https://github.com/zhongpan" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:zhongpan2000@gmail.com" title="E-Mail &rarr; mailto:zhongpan2000@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    
+  
+    <a href="https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">钟潘</span>
+</div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/pisces.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script><script src="/js/bookmark.js?v=7.4.0"></script>
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.0"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+<script>
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+</script>
+
+</body>
+</html>
